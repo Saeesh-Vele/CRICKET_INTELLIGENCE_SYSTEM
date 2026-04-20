@@ -75,7 +75,7 @@ batsman_df, bowler_df = load_data()
 # ----------------------------------------------------------
 @st.cache_resource
 def load_models():
-    runs_model = joblib.load("model/xgb_batsman_model.joblib")
+    runs_model = joblib.load("model/rf_batsman_model.joblib")
     runs_pipeline = joblib.load("model/feature_pipeline_batsman.pkl")
 
     wickets_model = joblib.load("model/rf_wickets_model.joblib")
@@ -181,6 +181,107 @@ def probability_distribution(prediction, std_dev, label):
     return fig, lower, upper
 
 
+def generate_match_context(score, overs, wickets):
+    if overs == 0:
+        run_rate = 0
+    else:
+        run_rate = score / overs
+    wickets_left = 10 - wickets
+    wickets_left = max(wickets_left, 1)
+    pressure_index = run_rate / wickets_left
+    return run_rate, wickets, wickets_left, pressure_index
+
+# ----------------------------------------------------------
+# RESIDUAL PLOT
+# ----------------------------------------------------------
+def residual_plot(model, pipeline, df, target_col):
+
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
+
+    X_processed = pipeline.transform(X)
+
+    if hasattr(X_processed, "toarray"):
+        X_processed = X_processed.toarray()
+
+    preds = model.predict(X_processed)
+    residuals = y.values - preds
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=preds,
+        y=residuals,
+        mode="markers",
+        opacity=0.6,
+        name="Residuals"
+    ))
+
+    fig.add_hline(
+        y=0,
+        line_dash="dash",
+        line_color="red"
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        title="Residual Analysis (Predicted vs Residuals)",
+        xaxis_title="Predicted Values",
+        yaxis_title="Residuals",
+        height=450
+    )
+
+    return fig
+
+# ----------------------------------------------------------
+# SHAP GLOBAL IMPORTANCE (BEESWARM STYLE)
+# ----------------------------------------------------------
+def shap_beeswarm_plot(model, pipeline, df, target_col):
+
+    X = df.drop(columns=[target_col])
+    X_processed = pipeline.transform(X)
+
+    if hasattr(X_processed, "toarray"):
+        X_processed = X_processed.toarray()
+
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X_processed)
+
+    feature_names = pipeline.get_feature_names_out()
+
+    numeric_indices = [
+        i for i, name in enumerate(feature_names)
+        if name.startswith("num__")
+    ]
+
+    shap_array = shap_values[:, numeric_indices]
+    clean_names = [
+        feature_names[i].replace("num__", "")
+        for i in numeric_indices
+    ]
+
+    mean_importance = np.abs(shap_array).mean(axis=0)
+
+    shap_df = pd.DataFrame({
+        "Feature": clean_names,
+        "Mean_Impact": mean_importance
+    }).sort_values(by="Mean_Impact", ascending=True)
+
+    fig = px.bar(
+        shap_df,
+        x="Mean_Impact",
+        y="Feature",
+        orientation="h",
+        template="plotly_dark",
+        title="Global Feature Importance (Mean |SHAP|)"
+    )
+
+    fig.update_layout(height=600)
+
+    return fig
+
+
+
 # ----------------------------------------------------------
 # NAVIGATION
 # ----------------------------------------------------------
@@ -210,110 +311,263 @@ with tab1:
     - Prediction uncertainty modeling
     """)
 
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import Table, TableStyle
+from io import BytesIO
+
 # ==========================================================
 # PREDICTION TAB
 # ==========================================================
+
 with tab2:
 
-    col1, col2 = st.columns([1, 2])
+    # ==============================
+    # CLEAN CONTAINER STYLING
+    # ==============================
+    st.markdown("""
+    <style>
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("## 🏏 AI Match Intelligence Dashboard")
+    st.markdown("---")
+
+    # ==============================
+    # 🎯 MATCH SETUP
+    # ==============================
+    st.markdown("###  Match Setup")
+
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        role = st.selectbox("Select Role", ["Batsman", "Bowler"])
+        role = st.selectbox("Role", ["Batsman", "Bowler"])
 
-        if role == "Batsman":
-            player = st.selectbox("Player", sorted(batsman_df["batter"].unique()))
-            venue = st.selectbox("Venue", sorted(batsman_df["venue"].unique()))
-        else:
-            player = st.selectbox("Player", sorted(bowler_df["bowler"].unique()))
-            venue = st.selectbox("Venue", sorted(bowler_df["venue"].unique()))
-
-        predict_btn = st.button("🚀 Predict Performance")
+    if role == "Batsman":
+        player_list = sorted(batsman_df["batter"].unique())
+        venue_list = sorted(batsman_df["venue"].unique())
+    else:
+        player_list = sorted(bowler_df["bowler"].unique())
+        venue_list = sorted(bowler_df["venue"].unique())
 
     with col2:
-        if predict_btn:
+        player = st.selectbox("Player", player_list)
 
-            if role == "Batsman":
+    with col3:
+        venue = st.selectbox("Venue", venue_list)
 
-                df = batsman_df[
-                    (batsman_df["batter"] == player) &
-                    (batsman_df["venue"] == venue)
-                ]
+    st.markdown("---")
 
-                if not df.empty:
-                    latest = df.iloc[-1:]
-                    X_input = latest.drop(columns=["runs_next_match"])
-                    X_processed = runs_pipeline.transform(X_input)
-                    
-                    raw_pred = runs_model.predict(X_processed)[0]
-                    display_pred = round(float(raw_pred), 1)
+    # ==============================
+    # ⚡ LIVE MATCH CONTEXT
+    # ==============================
+    st.markdown("###  Live Match Context")
 
-                    st.markdown(
-                        f'<div class="card runs-card">🔵 {display_pred} Runs</div>',
-                        unsafe_allow_html=True
-                    )
+    mc1, mc2, mc3 = st.columns(3)
 
-                    std_dev = compute_uncertainty(
-                        runs_model, runs_pipeline,
-                        batsman_df, "runs_next_match"
-                    )
+    with mc1:
+        current_score = st.number_input("Score", 0, 300, 50)
 
-                    fig_dist, lower, upper = probability_distribution(
-                        raw_pred, std_dev, "Runs"
-                    )
+    with mc2:
+        overs = st.number_input("Overs", 1, 20, 5)
 
-                    st.plotly_chart(fig_dist, use_container_width=True)
+    with mc3:
+        wickets = st.number_input("Wickets", 0, 10, 2)
 
-                    st.markdown(
-                        f'<div class="info-box">95% CI: {round(lower,1)} to {round(upper,1)}</div>',
-                        unsafe_allow_html=True
-                    )
+    st.markdown("---")
 
-                    shap_fig = shap_local_explanation(
-                        runs_model, runs_pipeline, X_processed
-                    )
-                    st.plotly_chart(shap_fig, use_container_width=True)
+    # ==============================
+    # 🚀 CENTERED BUTTON
+    # ==============================
+    _, center, _ = st.columns([1,2,1])
+    with center:
+        predict_btn = st.button("🚀 Run AI Prediction", use_container_width=True)
 
-            else:
+    st.markdown("---")
 
-                df = bowler_df[
-                    (bowler_df["bowler"] == player) &
-                    (bowler_df["venue"] == venue)
-                ]
+    # ==============================
+    # 🔮 PREDICTION LOGIC
+    # ==============================
+    if predict_btn:
 
-                if not df.empty:
-                    latest = df.iloc[-1:]
-                    X_input = latest.drop(columns=["wickets_next_match"])
-                    X_processed = wickets_pipeline.transform(X_input)
-                    raw_pred = wickets_model.predict(X_processed)[0]
-                    display_pred = round(float(raw_pred), 1)
+        if role == "Batsman":
+            df = batsman_df[
+                (batsman_df["batter"] == player) &
+                (batsman_df["venue"] == venue)
+            ]
+            target_col = "runs_next_match"
+            model = runs_model
+            pipeline = runs_pipeline
+            label = "Runs"
+            card_title = "Predicted Runs"
+            gradient = "linear-gradient(135deg,#2563eb,#06b6d4)"
 
-                    st.markdown(
-                        f'<div class="card wicket-card">🟣 {display_pred} Wickets</div>',
-                        unsafe_allow_html=True
-                    )
+        else:
+            df = bowler_df[
+                (bowler_df["bowler"] == player) &
+                (bowler_df["venue"] == venue)
+            ]
+            target_col = "wickets_next_match"
+            model = wickets_model
+            pipeline = wickets_pipeline
+            label = "Wickets"
+            card_title = "Predicted Wickets"
+            gradient = "linear-gradient(135deg,#7c3aed,#ec4899)"
 
-                    std_dev = compute_uncertainty(
-                        wickets_model, wickets_pipeline,
-                        bowler_df, "wickets_next_match"
-                    )
+        if not df.empty:
 
-                    fig_dist, lower, upper = probability_distribution(
-                        raw_pred, std_dev, "Wickets"
-                    )
+            latest = df.iloc[-1:].copy()
+            X_input = latest.drop(columns=[target_col]).copy()
 
-                    st.plotly_chart(fig_dist, use_container_width=True)
+            # ==============================
+            # 🔥 MATCH CONTEXT FEATURES
+            # ==============================
+            run_rate, wickets_fallen, wickets_left, pressure_index = generate_match_context(
+                current_score, overs, wickets
+            )
 
-                    st.markdown(
-                        f'<div class="info-box">95% CI: {round(lower,2)} to {round(upper,2)}</div>',
-                        unsafe_allow_html=True
-                    )
+            X_input["match_run_rate"] = run_rate
+            X_input["wickets_fallen"] = wickets_fallen
+            X_input["wickets_left"] = wickets_left
+            X_input["pressure_index"] = pressure_index
 
-                    shap_fig = shap_local_explanation(
-                        wickets_model, wickets_pipeline, X_processed
-                    )
-                    st.plotly_chart(shap_fig, use_container_width=True)
+            # ==============================
+            # ⚠️ PIPELINE FEATURE ALIGNMENT
+            # ==============================
+            expected_cols = pipeline.feature_names_in_
 
+            for col in expected_cols:
+                if col not in X_input.columns:
+                    X_input[col] = 0
 
+            X_input = X_input[expected_cols]
+
+            # ==============================
+            # 🔮 PREDICTION
+            # ==============================
+            X_processed = pipeline.transform(X_input)
+            raw_pred = model.predict(X_processed)[0]
+            display_pred = round(float(raw_pred), 2)
+
+            std_dev = compute_uncertainty(model, pipeline, df, target_col)
+            fig_dist, lower, upper = probability_distribution(raw_pred, std_dev, label)
+
+            # ==============================
+            # 📊 OUTPUT SECTION
+            # ==============================
+            row1_col1, row1_col2 = st.columns([1.5,1], gap="large")
+
+            with row1_col1:
+                st.markdown(f"### 🎯 {label} Prediction Distribution")
+                st.plotly_chart(fig_dist, use_container_width=True)
+
+            with row1_col2:
+                st.markdown(f"""
+                <div style="
+                    background:{gradient};
+                    padding:50px;
+                    border-radius:24px;
+                    text-align:center;
+                    color:white;
+                    box-shadow:0px 12px 30px rgba(0,0,0,0.35);
+                    margin-bottom:30px;">
+                    <h3>{card_title}</h3>
+                    <p style="font-size:18px;">Context-aware AI Prediction</p>
+                    <h1 style="font-size:60px;">{display_pred}</h1>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div style="
+                    background:#111827;
+                    padding:25px;
+                    border-radius:18px;
+                    text-align:center;
+                    color:white;">
+                    <h4>95% Confidence Interval</h4>
+                    <p style="font-size:20px;">
+                        {round(lower,2)} to {round(upper,2)}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # ==============================
+            # 📉 ANALYTICS
+            # ==============================
+            st.markdown("---")
+
+            row2_col1, row2_col2 = st.columns(2, gap="large")
+
+            with row2_col1:
+                st.markdown("### 🔍 Feature Impact (Local SHAP)")
+                shap_fig = shap_local_explanation(model, pipeline, X_processed)
+                st.plotly_chart(shap_fig, use_container_width=True)
+
+            with row2_col2:
+                st.markdown("### 📉 Residual Analysis")
+                residual_fig = residual_plot(model, pipeline, df, target_col=target_col)
+                st.plotly_chart(residual_fig, use_container_width=True)
+
+            st.markdown("---")
+
+            st.markdown("### 🐝 Global Feature Importance")
+            beeswarm_fig = shap_beeswarm_plot(model, pipeline, df, target_col=target_col)
+            st.plotly_chart(beeswarm_fig, use_container_width=True)
+
+            # =============================
+            # 📄 PDF DOWNLOAD
+            # =============================
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4)
+            elements = []
+
+            styles = getSampleStyleSheet()
+            title_style = styles["Heading1"]
+
+            elements.append(Paragraph("Performance Prediction Report", title_style))
+            elements.append(Spacer(1, 0.5 * inch))
+
+            report_data = [
+                ["Role", role],
+                ["Player", player],
+                ["Venue", venue],
+                [card_title, str(display_pred)],
+                ["Confidence Interval", f"{round(lower,2)} to {round(upper,2)}"]
+            ]
+
+            table = Table(report_data, colWidths=[2.5*inch, 3*inch])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+                ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
+                ("FONTNAME", (0,0), (-1,-1), "Helvetica"),
+                ("FONTSIZE", (0,0), (-1,-1), 10),
+                ("ALIGN", (0,0), (-1,-1), "CENTER")
+            ]))
+
+            elements.append(table)
+            doc.build(elements)
+
+            pdf = buffer.getvalue()
+            buffer.close()
+
+            st.download_button(
+                label="📄 Download Prediction Report (PDF)",
+                data=pdf,
+                file_name="prediction_report.pdf",
+                mime="application/pdf"
+            )
+
+        else:
+            st.warning("No data available for selected player and venue.")
+   
 # ==========================================================
 # ANALYTICS TAB
 # ==========================================================
