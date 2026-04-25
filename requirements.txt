@@ -1,6 +1,6 @@
 streamlit>=1.40.0
 pandas==2.3.3
-numpy==1.26.4
+numpy<2.4
 scikit-learn
 reportlab
 joblib
@@ -8,6 +8,6 @@ matplotlib
 seaborn
 xgboost==1.7.6
 lightgbm
-shap==0.44.1
+shap>=0.51.0
 plotly
 requests

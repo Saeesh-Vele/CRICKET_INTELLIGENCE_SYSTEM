@@ -920,11 +920,7 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
 
-        # Auto-refresh every 15 seconds when live
-        time.sleep(0.1)  # minimal non-blocking
-        if st.session_state.get("_live_auto_refresh", False):
-            time.sleep(15)
-            st.rerun()
+        # Auto-refresh removed to prevent UI freezing
 
     # ==============================
     #  DYNAMIC LIVE MATCH CARD
@@ -1289,15 +1285,15 @@ with tab2:
                 selected_idx = match_labels.index(selected_label)
                 selected_match = live_matches[selected_idx]
 
-            # Extract score from match object (already contains score data)
-            score_data = extract_score_from_match(selected_match)
-
-            if score_data is None:
-                # Fallback: try fetching score via match_id
-                match_id = selected_match.get("id", "")
-                if match_id:
-                    with st.spinner("Fetching live score..."):
-                        score_data = fetch_match_score(match_id)
+            # Always fetch fresh score via match_id to ensure live data is not stale
+            match_id = selected_match.get("id", "")
+            score_data = None
+            if match_id:
+                score_data = fetch_match_score(match_id)
+            
+            # Fallback to cached match object if fetch fails
+            if not score_data:
+                score_data = extract_score_from_match(selected_match)
 
             if score_data:
                 st.session_state["api_score_data"] = score_data

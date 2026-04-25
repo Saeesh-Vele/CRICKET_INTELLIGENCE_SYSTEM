@@ -9,7 +9,7 @@
 
 import requests
 
-API_BASE_URL = "https://api.cricketdata.org/v1"
+API_BASE_URL = "https://api.cricapi.com/v1"
 API_KEY = "41c57219-ae5d-4921-88c0-1aca3fa82ef0"
 
 # ----------------------------------------------------------
@@ -24,14 +24,14 @@ def fetch_live_matches():
         list[dict] | None: List of live match objects, or None on error.
     """
     try:
-        url = f"{API_BASE_URL}/matches"
-        params = {"apikey": API_KEY, "status": "live", "offset": 0}
+        url = f"{API_BASE_URL}/currentMatches"
+        params = {"apikey": API_KEY, "offset": 0}
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
 
         data = response.json()
 
-        if data.get("info", {}).get("s") != "success":
+        if data.get("status") != "success":
             return None
 
         matches = data.get("data", [])
@@ -118,14 +118,14 @@ def fetch_match_score(match_id):
         dict | None: Parsed score data or None on error.
     """
     try:
-        url = f"{API_BASE_URL}/scores"
+        url = f"{API_BASE_URL}/match_info"
         params = {"apikey": API_KEY, "id": match_id}
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
 
         data = response.json()
 
-        if data.get("info", {}).get("s") != "success":
+        if data.get("status") != "success":
             return None
 
         match_data = data.get("data", {})
