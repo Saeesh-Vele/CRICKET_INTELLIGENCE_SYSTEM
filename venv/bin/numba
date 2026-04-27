@@ -1,4 +1,4 @@
-#!/Users/saeeshsandipvele/AI_Cricket_Prediction/venv/bin/python3
+#!/Users/saeeshsandipvele/AI_Cricket_Prediction/venv/bin/python3.13
 # -*- coding: UTF-8 -*-
 from __future__ import print_function, division, absolute_import
 
