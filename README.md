@@ -54,3 +54,9 @@ streamlit run app/streamlit_app.py
 - **Uncertainty Modeling** — 95% confidence intervals with probability density
 - **Live Match Context** — Real-time IPL data via CricAPI
 - **PDF Reports** — One-click downloadable prediction reports
+
+
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+streamlit run app/streamlit_app.py

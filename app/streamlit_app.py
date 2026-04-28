@@ -718,6 +718,204 @@ def residual_plot(model, pipeline, df, target_col):
     return fig
 
 # ----------------------------------------------------------
+# REUSABLE LIVE SCORE COMPONENT
+# ----------------------------------------------------------
+def render_live_score(data):
+    """
+    Renders a unified Live Score card via st.components.v1.html.
+    data dict keys: team_a, team_b, stadium, runs, wickets, overs, run_rate
+    """
+    team_a = data.get("team_a", "Team A")
+    team_b = data.get("team_b", "Team B")
+    stadium = data.get("stadium", "Unknown Stadium")
+    runs = data.get("runs", 0)
+    wickets = data.get("wickets", 0)
+    overs_val = data.get("overs", 0)
+    run_rate = data.get("run_rate", 0.0)
+
+    # Match status heuristic
+    if run_rate > 8:
+        match_status = f"{team_a} is in control"
+    elif run_rate > 6:
+        match_status = "Match is balanced"
+    else:
+        match_status = f"{team_b} gaining advantage"
+
+    baseline_rr = 8.0
+    rr_eval = "Above par" if run_rate >= baseline_rr else "Below par"
+
+    if run_rate >= 8 and wickets <= 4:
+        momentum = "Strong"
+    elif run_rate >= 6 and wickets <= 6:
+        momentum = "Stable"
+    else:
+        momentum = "Dropping"
+
+    # Win probability
+    remaining_overs = max(20 - overs_val, 1)
+    wickets_in_hand = max(10 - wickets, 0)
+    win_prob = min(100, max(0, round(
+        40 + (run_rate - 7) * 5 + wickets_in_hand * 3 - (20 - remaining_overs) * 0.8, 1
+    )))
+    lose_prob = round(100 - win_prob, 1)
+
+    # Momentum color
+    momentum_color = "#22c55e" if momentum == "Strong" else ("#f59e0b" if momentum == "Stable" else "#ef4444")
+    rr_color = "#22c55e" if rr_eval == "Above par" else "#f59e0b"
+
+    st.components.v1.html(f"""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @keyframes livePulse {{
+            0%, 100% {{ opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }}
+            50% {{ opacity: 0.7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }}
+        }}
+        @keyframes fadeIn {{
+            from {{ opacity: 0; transform: translateY(6px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+    </style>
+
+    <div style="
+        background: linear-gradient(145deg, #0f172a 0%, #111827 50%, #0f172a 100%);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
+        padding: 0;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: #e5e7eb;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.03) inset;
+        animation: fadeIn 0.4s ease;">
+
+        <!-- MATCH HEADER -->
+        <div style="
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(139,92,246,0.05) 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <div>
+                <div style="
+                    display: flex; align-items: center; gap: 8px;
+                    font-size: 10px; font-weight: 600;
+                    text-transform: uppercase; letter-spacing: 1.5px;
+                    color: #8b5cf6; margin-bottom: 6px;">
+                    ⚡ <span>Live Match • {{match_status}}</span>
+                </div>
+                <div style="font-size: 20px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.5px;">
+                    {team_a} <span style="color:#475569; font-weight:400;">vs</span> {team_b}
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 5px; display:flex; align-items:center; gap:4px;">
+                    📍 {stadium}
+                </div>
+            </div>
+            <div style="
+                display: flex; align-items: center; gap: 8px;
+                background: rgba(34,197,94,0.1);
+                border: 1px solid rgba(34,197,94,0.2);
+                border-radius: 20px; padding: 6px 14px;">
+                <span style="display: inline-block; width: 8px; height: 8px;
+                    border-radius: 50%; background: #22c55e;
+                    animation: livePulse 2s ease-in-out infinite;"></span>
+                <span style="font-size: 11px; font-weight: 700;
+                    text-transform: uppercase; letter-spacing: 1.2px;
+                    color: #22c55e;">Live</span>
+            </div>
+        </div>
+
+        <!-- SCORE PANEL -->
+        <div style="
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 28px 28px 24px 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);">
+            <div>
+                <div style="font-size: 52px; font-weight: 800; color: #f8fafc;
+                    letter-spacing: -2px; line-height: 1;
+                    background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+                    -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {runs}/{wickets}
+                </div>
+                <div style="font-size: 13px; color: #64748b; margin-top: 8px; font-weight: 400;">
+                    After {overs_val} overs
+                </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <div style="text-align: center; background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+                    padding: 14px 20px; min-width: 80px;">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+                        color: #64748b; font-weight: 600; margin-bottom: 6px;">Overs</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #e2e8f0;">{overs_val}</div>
+                </div>
+                <div style="text-align: center; background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+                    padding: 14px 20px; min-width: 80px;">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+                        color: #64748b; font-weight: 600; margin-bottom: 6px;">Wickets</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #e2e8f0;">{wickets}</div>
+                </div>
+                <div style="text-align: center; background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+                    padding: 14px 20px; min-width: 120px;">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+                        color: #64748b; font-weight: 600; margin-bottom: 6px;">Run Rate</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #e2e8f0;">
+                        {run_rate}
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;">
+                        <span style="display:inline-block; width:6px; height:6px; border-radius:50%;
+                            background:{rr_color};"></span>
+                        <span style="font-size: 10px; color: {rr_color}; font-weight: 500;">{rr_eval}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MOMENTUM STRIP -->
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px;
+            padding: 10px 24px; background: rgba(255,255,255,0.015);
+            border-bottom: 1px solid rgba(255,255,255,0.04);">
+            <span style="font-size:10px; text-transform:uppercase; letter-spacing:1.5px;
+                color:#64748b; font-weight:600;">Momentum</span>
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%;
+                background:{momentum_color};"></span>
+            <span style="font-size:12px; font-weight:600; color:{momentum_color};">{momentum}</span>
+        </div>
+
+        <!-- MATCH PROBABILITY -->
+        <div style="padding: 20px 28px 24px 28px;">
+            <div style="display: flex; align-items: center; gap: 8px;
+                font-size: 10px; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 1.5px;
+                color: #64748b; margin-bottom: 12px;">
+                📊 <span>Match Probability</span>
+            </div>
+            <div style="display: flex; width: 100%; height: 8px;
+                border-radius: 10px; overflow: hidden; background: #1e293b;">
+                <div style="width: {win_prob}%; background: linear-gradient(90deg, #22c55e, #4ade80);
+                    border-radius: 10px 0 0 10px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);"></div>
+                <div style="width: {lose_prob}%; background: linear-gradient(90deg, #f87171, #ef4444);
+                    border-radius: 0 10px 10px 0; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:2px;
+                        background: linear-gradient(135deg, #22c55e, #4ade80);"></span>
+                    <span style="font-size: 13px; font-weight: 600; color: #22c55e;">{team_a}</span>
+                    <span style="font-size: 13px; font-weight: 700; color: #22c55e;">{win_prob}%</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size: 13px; font-weight: 600; color: #ef4444;">{team_b}</span>
+                    <span style="font-size: 13px; font-weight: 700; color: #ef4444;">{lose_prob}%</span>
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:2px;
+                        background: linear-gradient(135deg, #f87171, #ef4444);"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    """.replace("{{match_status}}", match_status), height=380)
+
+
+# ----------------------------------------------------------
 # SHAP GLOBAL IMPORTANCE (BEESWARM STYLE)
 # ----------------------------------------------------------
 def shap_beeswarm_plot(model, pipeline, df, target_col):
@@ -811,245 +1009,8 @@ with tab1:
     """, unsafe_allow_html=True)
 
     # ==============================
-    #  LIVE API SCORE CARD (Tab 1)
+    #  FEATURE GRID (static content only — no live score)
     # ==============================
-    if st.session_state.get("input_mode") == "Live Match (API)" and st.session_state.get("api_score_data"):
-        api_sc = st.session_state["api_score_data"]
-        st.markdown(f"""
-        <div class="api-status-card">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                <span class="live-badge"><span class="live-pulse"></span> LIVE API</span>
-                <span style="font-size:13px; color:#94a3b8;">{api_sc.get('inning_label','')}</span>
-            </div>
-            <div style="font-size:22px; font-weight:700; color:#f1f5f9; margin-bottom:4px;">
-                {api_sc.get('team1','Team A')} vs {api_sc.get('team2','Team B')}
-            </div>
-            <div style="display:flex; gap:32px; margin-top:12px;">
-                <div>
-                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:#6b7280; font-weight:500;">Score</div>
-                    <div style="font-size:32px; font-weight:700; color:#e5e7eb;">{api_sc.get('runs',0)}/{api_sc.get('wickets',0)}</div>
-                </div>
-                <div>
-                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:#6b7280; font-weight:500;">Overs</div>
-                    <div style="font-size:32px; font-weight:700; color:#e5e7eb;">{api_sc.get('overs',0)}</div>
-                </div>
-                <div>
-                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:#6b7280; font-weight:500;">Run Rate</div>
-                    <div style="font-size:32px; font-weight:700; color:#e5e7eb;">{round(api_sc.get('runs',0) / max(api_sc.get('overs',1), 0.1), 2)}</div>
-                </div>
-            </div>
-            <div style="margin-top:10px; font-size:12px; color:#64748b;">Status: {api_sc.get('status','')}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Auto-refresh removed to prevent UI freezing
-
-    # ==============================
-    #  DYNAMIC LIVE MATCH CARD
-    # ==============================
-    score = st.session_state.get("live_score", 120)
-    overs_val = st.session_state.get("live_overs", 12)
-    wickets_val = st.session_state.get("live_wickets", 3)
-
-    run_rate = round(score / max(overs_val, 1), 2)
-
-    # ==============================
-    # MATCH STATUS & MOMENTUM
-    # ==============================
-    if run_rate > 8:
-        match_status = "Team A is in control"
-    elif run_rate > 6:
-        match_status = "Match is balanced"
-    else:
-        match_status = "Team B gaining advantage"
-        
-    baseline_rr = 8.0
-    rr_eval = "Above par" if run_rate >= baseline_rr else "Below par"
-    
-    if run_rate >= 8 and wickets_val <= 4:
-        momentum = "Strong"
-    elif run_rate >= 6 and wickets_val <= 6:
-        momentum = "Stable"
-    else:
-        momentum = "Dropping"
-
-    # ==============================
-    # WIN PROBABILITY (compute before rendering)
-    # ==============================
-    remaining_overs = max(20 - overs_val, 1)
-    wickets_in_hand = max(10 - wickets_val, 0)
-    win_prob = min(100, max(0, round(
-        40 + (run_rate - 7) * 5 + wickets_in_hand * 3 - (20 - remaining_overs) * 0.8, 1
-    )))
-    lose_prob = round(100 - win_prob, 1)
-
-    st.components.v1.html(f"""
-
-    <style>
-    i[data-lucide] {{
-        width: 18px;
-        height: 18px;
-        stroke-width: 1.8;
-        color: #9ca3af;
-        vertical-align: middle;
-        margin-right: 8px;
-    }}
-    </style>
-    <div style="
-        background: #111827;
-        border: 1px solid #1f2937;
-        border-radius: 10px;
-        padding: 0;
-        font-family: Inter, system-ui, -apple-system, sans-serif;
-        color: #e5e7eb;
-        overflow: hidden;">
-
-        <!-- ── MATCH HEADER ── -->
-        <div style="
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 18px;
-            border-bottom: 1px solid #1f2937;">
-            <div>
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 11px;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 1.2px;
-                    color: #6b7280;
-                    margin-bottom: 4px;">
-                    ⚡
-                    <span>Live Match • {match_status}</span>
-                </div>
-                <div style="
-                    font-size: 18px;
-                    font-weight: 600;
-                    color: #e5e7eb;
-                    letter-spacing: -0.3px;">Team A vs Team B</div>
-            </div>
-            <div style="
-                display: flex;
-                align-items: center;
-                gap: 6px;">
-                <span style="
-                    display: inline-block;
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                    background: #22c55e;
-                    box-shadow: 0 0 4px #22c55e;"></span>
-                <span style="
-                    font-size: 11px;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    color: #22c55e;">Live</span>
-            </div>
-        </div>
-
-        <!-- ── SCORE PANEL ── -->
-        <div style="padding-left: 24px; padding-top: 16px;">⏱️</div>
-        <div style="
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 24px;
-            border-bottom: 1px solid #1f2937;">
-            <!-- LEFT: Dominant Score -->
-            <div>
-                <div style="
-                    font-size: 44px;
-                    font-weight: 700;
-                    color: #e5e7eb;
-                    letter-spacing: -1.5px;
-                    line-height: 1;">{score}/{wickets_val}</div>
-                <div style="
-                    font-size: 13px;
-                    color: #6b7280;
-                    margin-top: 6px;
-                    font-weight: 400;">After {overs_val} overs</div>
-            </div>
-            <!-- RIGHT: Compact Stats -->
-            <div style="
-                display: flex;
-                gap: 28px;">
-                <div style="text-align: right;">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Overs</div>
-                    <div style="font-size: 20px; font-weight: 600; color: #e5e7eb;">{overs_val}</div>
-                </div>
-                <div style="
-                    width: 1px;
-                    background: #1f2937;
-                    align-self: stretch;"></div>
-                <div style="text-align: right;">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Wickets</div>
-                    <div style="font-size: 20px; font-weight: 600; color: #e5e7eb;">{wickets_val}</div>
-                </div>
-                <div style="
-                    width: 1px;
-                    background: #1f2937;
-                    align-self: stretch;"></div>
-                <div style="text-align: left;">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; font-weight: 500; margin-bottom: 4px;">Run Rate</div>
-                    <div style="font-size: 20px; font-weight: 600; color: #e5e7eb;">{run_rate} <span style="font-size:12px;color:#9ca3af;">({rr_eval})</span></div>
-                    <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Momentum: {momentum}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── MATCH PROBABILITY ── -->
-        <div style="padding: 16px 24px;">
-            <div style="
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 11px;
-                font-weight: 500;
-                text-transform: uppercase;
-                letter-spacing: 1.2px;
-                color: #6b7280;
-                margin-bottom: 10px;">
-                📈
-                <span>Match Probability</span>
-            </div>
-            <!-- Progress Bar -->
-            <div style="
-                display: flex;
-                width: 100%;
-                height: 6px;
-                border-radius: 3px;
-                overflow: hidden;
-                background: #1f2937;">
-                <div style="
-                    width: {win_prob}%;
-                    background: #22c55e;
-                    border-radius: 3px 0 0 3px;
-                    transition: width 0.4s ease;"></div>
-                <div style="
-                    width: {lose_prob}%;
-                    background: #ef4444;
-                    border-radius: 0 3px 3px 0;
-                    transition: width 0.4s ease;"></div>
-            </div>
-            <!-- Labels -->
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                margin-top: 8px;">
-                <span style="font-size: 13px; font-weight: 600; color: #22c55e;">Team A {win_prob}%</span>
-                <span style="font-size: 13px; font-weight: 600; color: #ef4444;">Team B {lose_prob}%</span>
-            </div>
-        </div>
-    </div>
-    <script>
-
-    </script>
-    """, height=315)
-
     st.markdown("""
 
     <div class="feature-grid">
@@ -1107,13 +1068,13 @@ with tab2:
     st.markdown("")  # spacer
 
     # ==============================
-    #  INPUT MODE TOGGLE
+    #  MODE SELECTOR
     # ==============================
     st.markdown("""
     <div class="section-header">
         <div class="section-icon">⚡</div>
         <div>
-            <div class="section-title">Input Mode</div>
+            <div class="section-title">Select Mode</div>
             <div class="section-subtitle">Choose manual entry or live API data source</div>
         </div>
     </div>
@@ -1121,9 +1082,9 @@ with tab2:
 
     st.markdown("")
 
-    # Initialize session state for input mode
+    # Initialize session state
     if "input_mode" not in st.session_state:
-        st.session_state["input_mode"] = "Manual Input"
+        st.session_state["input_mode"] = "Manual Mode"
     if "api_score_data" not in st.session_state:
         st.session_state["api_score_data"] = None
     if "live_matches_cache" not in st.session_state:
@@ -1133,31 +1094,41 @@ with tab2:
     if "_live_auto_refresh" not in st.session_state:
         st.session_state["_live_auto_refresh"] = False
 
-    input_mode = st.selectbox(
-        "Data Source",
-        ["Manual Input", "Live Match (API)"],
-        key="input_mode_radio",
-    )
+    mode = st.radio("Select Mode", ["Manual Mode", "Live API Mode"], horizontal=True, key="mode_radio")
 
     # Handle mode switching cleanly
-    if input_mode != st.session_state.get("input_mode"):
-        st.session_state["input_mode"] = input_mode
+    if mode != st.session_state.get("input_mode"):
+        st.session_state["input_mode"] = mode
         st.session_state["api_score_data"] = None
         st.session_state["live_matches_cache"] = None
         st.session_state["selected_match_idx"] = 0
         st.session_state["pred_clicked"] = False
         st.session_state["_live_auto_refresh"] = False
     else:
-        st.session_state["input_mode"] = input_mode
+        st.session_state["input_mode"] = mode
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ==============================
-    #  LIVE MATCH API SECTION
+    #  PREPARE LIVE SCORE DATA
     # ==============================
+    # Default zero-state values (shown on initial load)
+    live_score_data = {
+        "team_a": "Team A",
+        "team_b": "Team B",
+        "stadium": "Unknown Stadium",
+        "runs": 0,
+        "wickets": 0,
+        "overs": 0,
+        "run_rate": 0.0,
+    }
+
     api_features = None  # Will hold transformed features if live mode
 
-    if st.session_state["input_mode"] == "Live Match (API)":
+    # --------------------------------------------------
+    # CASE 1: LIVE API MODE
+    # --------------------------------------------------
+    if st.session_state["input_mode"] == "Live API Mode":
 
         st.markdown("""
         <div class="section-header">
@@ -1179,7 +1150,6 @@ with tab2:
         if refresh_btn or st.session_state["live_matches_cache"] is None:
             with st.spinner("Fetching live IPL matches..."):
                 all_live = fetch_live_matches()
-                # Filter for IPL matches only
                 ipl_matches = filter_ipl_matches(all_live) if all_live else []
                 st.session_state["live_matches_cache"] = ipl_matches if ipl_matches else None
 
@@ -1193,7 +1163,6 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
 
-            # Auto-select if only one IPL match, else show dropdown
             if len(live_matches) == 1:
                 selected_match = live_matches[0]
                 st.info(f"⚡ Auto-selected: **{format_match_label(selected_match)}**")
@@ -1207,13 +1176,11 @@ with tab2:
                 selected_idx = match_labels.index(selected_label)
                 selected_match = live_matches[selected_idx]
 
-            # Always fetch fresh score via match_id to ensure live data is not stale
             match_id = selected_match.get("id", "")
             score_data = None
             if match_id:
                 score_data = fetch_match_score(match_id)
-            
-            # Fallback to cached match object if fetch fails
+
             if not score_data:
                 score_data = extract_score_from_match(selected_match)
 
@@ -1221,51 +1188,108 @@ with tab2:
                 st.session_state["api_score_data"] = score_data
                 st.session_state["_live_auto_refresh"] = True
 
-                # Display live score card
-                st.markdown(f"""
-                <div class="api-status-card">
-                    <div style="font-size:18px; font-weight:700; color:#f1f5f9; margin-bottom:8px;">
-                        {score_data['team1']} vs {score_data['team2']}
-                    </div>
-                    <div style="display:flex; gap:32px; align-items:flex-end;">
-                        <div>
-                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:#6b7280; font-weight:500;">Score</div>
-                            <div style="font-size:36px; font-weight:700; color:#e5e7eb;">{score_data['runs']}/{score_data['wickets']}</div>
-                        </div>
-                        <div>
-                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:#6b7280; font-weight:500;">Overs</div>
-                            <div style="font-size:36px; font-weight:700; color:#e5e7eb;">{score_data['overs']}</div>
-                        </div>
-                        <div style="flex:1;">
-                            <div style="font-size:13px; color:#94a3b8;">{score_data.get('inning_label','')}</div>
-                            <div style="font-size:12px; color:#64748b; margin-top:4px;">{score_data.get('status','')}</div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Populate live_score_data from API
+                api_overs = float(score_data.get("overs", 0) or 0)
+                api_runs = int(score_data.get("runs", 0) or 0)
+                api_rr = round(api_runs / max(api_overs, 0.1), 2)
 
-                # Transform API data to model features
+                live_score_data = {
+                    "team_a": score_data.get("team1", "Team A"),
+                    "team_b": score_data.get("team2", "Team B"),
+                    "stadium": score_data.get("venue", "Unknown Stadium"),
+                    "runs": api_runs,
+                    "wickets": int(score_data.get("wickets", 0) or 0),
+                    "overs": api_overs,
+                    "run_rate": api_rr,
+                }
+
                 api_features = transform_api_to_features(score_data)
 
                 if api_features:
                     st.success(f"✅ IPL live data loaded: {score_data['runs']}/{score_data['wickets']} in {score_data['overs']} overs → features ready for prediction")
                 else:
-                    st.warning("⚠️ Could not transform API data. Falling back to manual input.")
-                    st.session_state["input_mode"] = "Manual Input"
-
+                    st.warning("⚠️ Could not transform API data. Falling back to Manual Mode.")
             else:
-                st.warning("⚠️ Could not fetch score for selected match. Falling back to manual input.")
+                st.warning("⚠️ Could not fetch score for selected match.")
                 st.session_state["api_score_data"] = None
                 st.session_state["_live_auto_refresh"] = False
-
         else:
-            # No IPL live matches – fallback to manual
-            st.warning("⚠️ No IPL live match currently available. Switching to manual input.")
-            st.session_state["input_mode"] = "Manual Input"
+            st.warning("⚠️ No IPL live match currently available.")
             st.session_state["api_score_data"] = None
             st.session_state["_live_auto_refresh"] = False
 
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    # --------------------------------------------------
+    # CASE 2: MANUAL MODE
+    # --------------------------------------------------
+    else:
+        st.markdown("""
+        <div class="section-header">
+            <div class="section-icon">🏏</div>
+            <div>
+                <div class="section-title">Match Details</div>
+                <div class="section-subtitle">Enter team names, stadium, and current match state</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("")
+
+        # Team & stadium inputs
+        tm1, tm2, tm3 = st.columns(3, gap="medium")
+        with tm1:
+            manual_team_a = st.text_input("Team A Name", value="Team A", key="manual_team_a")
+        with tm2:
+            manual_team_b = st.text_input("Team B Name", value="Team B", key="manual_team_b")
+        with tm3:
+            manual_stadium = st.text_input("Stadium Name", value="Unknown Stadium", key="manual_stadium")
+
+        st.markdown("")
+
+        # Score inputs
+        mc1, mc2, mc3, mc4 = st.columns(4, gap="medium")
+        with mc1:
+            manual_runs = st.number_input("Runs", 0, 500, 0, key="manual_runs")
+        with mc2:
+            manual_wickets = st.number_input("Wickets", 0, 10, 0, key="manual_wickets")
+        with mc3:
+            manual_overs = st.number_input("Overs", 0, 20, 0, key="manual_overs")
+        with mc4:
+            manual_rr = st.number_input("Run Rate", 0.0, 36.0, 0.0, step=0.1, key="manual_rr")
+
+        # Auto-compute run rate if user hasn't manually changed it
+        if manual_rr == 0.0 and manual_overs > 0:
+            manual_rr = round(manual_runs / max(manual_overs, 0.1), 2)
+
+        live_score_data = {
+            "team_a": manual_team_a or "Team A",
+            "team_b": manual_team_b or "Team B",
+            "stadium": manual_stadium or "Unknown Stadium",
+            "runs": manual_runs,
+            "wickets": manual_wickets,
+            "overs": manual_overs,
+            "run_rate": manual_rr,
+        }
+
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    # ==============================
+    #  RENDER LIVE SCORE (BOTH MODES)
+    # ==============================
+    st.markdown("""
+    <div class="section-header">
+        <div class="section-icon">🔴</div>
+        <div>
+            <div class="section-title">Live Score</div>
+            <div class="section-subtitle">Real-time match overview</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    render_live_score(live_score_data)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ==============================
     #  MATCH SETUP
@@ -1278,9 +1302,6 @@ with tab2:
             <div class="section-subtitle">Configure role, player, and venue</div>
         </div>
     </div>
-    <script>
-
-    </script>
     """, unsafe_allow_html=True)
 
     st.markdown("")
@@ -1306,50 +1327,21 @@ with tab2:
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ==============================
-    #  LIVE MATCH CONTEXT
+    #  RESOLVE MATCH CONTEXT VALUES
     # ==============================
-    if st.session_state["input_mode"] == "Live Match (API)" and api_features:
-        # ── LIVE MODE: hide manual inputs, use API data silently ──
+    if st.session_state["input_mode"] == "Live API Mode" and api_features:
         current_score = int(api_features["current_score"])
         overs = int(api_features["overs"])
         wickets = int(api_features["wickets"])
-
-        st.markdown("""
-        <div style="padding:14px 20px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.18); border-radius:14px; display:flex; align-items:center; gap:12px;">
-            <span class="live-badge"><span class="live-pulse"></span> LIVE</span>
-            <span style="color:#94a3b8; font-size:13px; font-weight:500;">Live data is being auto-fetched. Manual input disabled.</span>
-        </div>
-        """, unsafe_allow_html=True)
-
     else:
-        # ── MANUAL MODE: show full input section ──
-        st.markdown("""
-        <div class="section-header">
-            <div class="section-icon">🏏</div>
-            <div>
-                <div class="section-title">Live Match Context</div>
-                <div class="section-subtitle">Current match state for context-aware predictions</div>
-            </div>
-        </div>
-        <script>
+        current_score = live_score_data["runs"]
+        overs = live_score_data["overs"]
+        wickets = live_score_data["wickets"]
+        # Ensure overs is at least 1 for downstream match context calculation
+        if overs == 0:
+            overs = 1
 
-        </script>
-        """, unsafe_allow_html=True)
-
-        st.markdown("")
-
-        mc1, mc2, mc3 = st.columns(3, gap="medium")
-
-        with mc1:
-            current_score = st.number_input("Score", 0, 300, 50)
-
-        with mc2:
-            overs = st.number_input("Overs", 1, 20, 5)
-
-        with mc3:
-            wickets = st.number_input("Wickets", 0, 10, 2)
-
-    # Store in session state so Overview tab can read live values
+    # Store in session state
     st.session_state["live_score"] = current_score
     st.session_state["live_overs"] = overs
     st.session_state["live_wickets"] = wickets
