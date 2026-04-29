@@ -47,33 +47,33 @@ st.markdown("""
 
 /* ===== ROOT VARIABLES ===== */
 :root {
-    --bg-primary: #0f172a;
-    --bg-secondary: #0f172a;
-    --bg-card: #1e293b;
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --accent-blue: #2563eb;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-card: #f1f5f9;
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --accent-blue: #0f172a;
     --success-green: #22c55e;
     --danger-red: #ef4444;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --text-primary: #000000;
+    --text-secondary: #334155;
     --text-muted: #64748b;
-    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.2);
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
     --transition-smooth: all 0.2s ease;
 }
 
 @media (prefers-color-scheme: light) {
     :root {
-        --bg-primary: #f8fafc;
-        --bg-secondary: #ffffff;
-        --bg-card: #ffffff;
-        --border-subtle: rgba(0, 0, 0, 0.06);
-        --accent-blue: #2563eb;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8fafc;
+        --bg-card: #f1f5f9;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --accent-blue: #0f172a;
         --success-green: #22c55e;
         --danger-red: #ef4444;
-        --text-primary: #0f172a;
-        --text-secondary: #475569;
+        --text-primary: #000000;
+        --text-secondary: #334155;
         --text-muted: #64748b;
-        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04);
+        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
 }
 
@@ -588,13 +588,13 @@ def shap_local_explanation(model, pipeline, X_processed):
         x="Impact",
         y="Feature",
         orientation="h",
-        template="plotly_dark",
+        template="plotly_white",
         title="Top Feature Contributions",
         color="Impact",
         color_continuous_scale=["#ec4899", "#64748b", "#3b82f6"]
     )
     fig.update_layout(
-        font=dict(family="Inter", size=13),
+        font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=50, b=20),
@@ -646,12 +646,12 @@ def probability_distribution(prediction, std_dev, label):
     )
 
     fig.update_layout(
-        template="plotly_dark",
+        template="plotly_white",
         title=f"{label} Prediction Distribution",
         xaxis_title=label,
         yaxis_title="Density",
         height=500,
-        font=dict(family="Inter", size=13),
+        font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=50, b=20)
@@ -704,12 +704,12 @@ def residual_plot(model, pipeline, df, target_col):
     )
 
     fig.update_layout(
-        template="plotly_dark",
+        template="plotly_white",
         title="Residual Analysis (Predicted vs Residuals)",
         xaxis_title="Predicted Values",
         yaxis_title="Residuals",
         height=450,
-        font=dict(family="Inter", size=13),
+        font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=50, b=20)
@@ -777,32 +777,32 @@ def render_live_score(data):
     </style>
 
     <div style="
-        background: linear-gradient(145deg, #0f172a 0%, #111827 50%, #0f172a 100%);
-        border: 1px solid rgba(255,255,255,0.06);
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+        border: 1px solid rgba(0,0,0,0.08);
         border-radius: 20px;
         padding: 0;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        color: #e5e7eb;
+        color: #000000;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.03) inset;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02) inset;
         animation: fadeIn 0.4s ease;">
 
         <!-- MATCH HEADER -->
         <div style="
             display: flex; align-items: center; justify-content: space-between;
             padding: 16px 24px;
-            background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(139,92,246,0.05) 100%);
-            border-bottom: 1px solid rgba(255,255,255,0.05);">
+            background: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(139,92,246,0.05) 100%);
+            border-bottom: 1px solid rgba(0,0,0,0.06);">
             <div>
                 <div style="
                     display: flex; align-items: center; gap: 8px;
                     font-size: 10px; font-weight: 600;
                     text-transform: uppercase; letter-spacing: 1.5px;
-                    color: #8b5cf6; margin-bottom: 6px;">
+                    color: #475569; margin-bottom: 6px;">
                     ⚡ <span>Live Match • {{match_status}}</span>
                 </div>
-                <div style="font-size: 20px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.5px;">
-                    {team_a} <span style="color:#475569; font-weight:400;">vs</span> {team_b}
+                <div style="font-size: 20px; font-weight: 700; color: #000000; letter-spacing: -0.5px;">
+                    {team_a} <span style="color:#64748b; font-weight:400;">vs</span> {team_b}
                 </div>
                 <div style="font-size: 12px; color: #64748b; margin-top: 5px; display:flex; align-items:center; gap:4px;">
                     📍 {stadium}
@@ -826,11 +826,11 @@ def render_live_score(data):
         <div style="
             display: flex; align-items: center; justify-content: space-between;
             padding: 28px 28px 24px 28px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);">
+            border-bottom: 1px solid rgba(0,0,0,0.04);">
             <div>
-                <div style="font-size: 52px; font-weight: 800; color: #f8fafc;
+                <div style="font-size: 52px; font-weight: 800; color: #000000;
                     letter-spacing: -2px; line-height: 1;
-                    background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+                    background: linear-gradient(135deg, #000000 0%, #334155 100%);
                     -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                     {runs}/{wickets}
                 </div>
@@ -839,26 +839,26 @@ def render_live_score(data):
                 </div>
             </div>
             <div style="display: flex; gap: 6px;">
-                <div style="text-align: center; background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+                <div style="text-align: center; background: rgba(0,0,0,0.02);
+                    border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
                     padding: 14px 20px; min-width: 80px;">
                     <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
                         color: #64748b; font-weight: 600; margin-bottom: 6px;">Overs</div>
-                    <div style="font-size: 22px; font-weight: 700; color: #e2e8f0;">{overs_val}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #000000;">{overs_val}</div>
                 </div>
-                <div style="text-align: center; background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+                <div style="text-align: center; background: rgba(0,0,0,0.02);
+                    border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
                     padding: 14px 20px; min-width: 80px;">
                     <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
                         color: #64748b; font-weight: 600; margin-bottom: 6px;">Wickets</div>
-                    <div style="font-size: 22px; font-weight: 700; color: #e2e8f0;">{wickets}</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #000000;">{wickets}</div>
                 </div>
-                <div style="text-align: center; background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+                <div style="text-align: center; background: rgba(0,0,0,0.02);
+                    border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
                     padding: 14px 20px; min-width: 120px;">
                     <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
                         color: #64748b; font-weight: 600; margin-bottom: 6px;">Run Rate</div>
-                    <div style="font-size: 22px; font-weight: 700; color: #e2e8f0;">
+                    <div style="font-size: 22px; font-weight: 700; color: #000000;">
                         {run_rate}
                     </div>
                     <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;">
@@ -872,8 +872,8 @@ def render_live_score(data):
 
         <!-- MOMENTUM STRIP -->
         <div style="display:flex; align-items:center; justify-content:center; gap:8px;
-            padding: 10px 24px; background: rgba(255,255,255,0.015);
-            border-bottom: 1px solid rgba(255,255,255,0.04);">
+            padding: 10px 24px; background: rgba(0,0,0,0.015);
+            border-bottom: 1px solid rgba(0,0,0,0.04);">
             <span style="font-size:10px; text-transform:uppercase; letter-spacing:1.5px;
                 color:#64748b; font-weight:600;">Momentum</span>
             <span style="display:inline-block; width:6px; height:6px; border-radius:50%;
@@ -890,7 +890,7 @@ def render_live_score(data):
                 📊 <span>Match Probability</span>
             </div>
             <div style="display: flex; width: 100%; height: 8px;
-                border-radius: 10px; overflow: hidden; background: #1e293b;">
+                border-radius: 10px; overflow: hidden; background: #e2e8f0;">
                 <div style="width: {win_prob}%; background: linear-gradient(90deg, #22c55e, #4ade80);
                     border-radius: 10px 0 0 10px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);"></div>
                 <div style="width: {lose_prob}%; background: linear-gradient(90deg, #f87171, #ef4444);
@@ -954,7 +954,7 @@ def shap_beeswarm_plot(model, pipeline, df, target_col):
         x="Mean_Impact",
         y="Feature",
         orientation="h",
-        template="plotly_dark",
+        template="plotly_white",
         title="Global Feature Importance (Mean |SHAP|)",
         color="Mean_Impact",
         color_continuous_scale=["#1e293b", "#3b82f6", "#06b6d4"]
@@ -962,7 +962,7 @@ def shap_beeswarm_plot(model, pipeline, df, target_col):
 
     fig.update_layout(
         height=600,
-        font=dict(family="Inter", size=13),
+        font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=50, b=20),
@@ -1587,7 +1587,7 @@ with tab2:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                st.plotly_chart(fig_dist, use_container_width=True)
+                st.plotly_chart(fig_dist, use_container_width=True, theme=None)
 
             with row1_col2:
                 # MODEL CONFIDENCE
@@ -1637,14 +1637,14 @@ with tab2:
                 </div>
                 """, unsafe_allow_html=True)
                 shap_fig, shap_df = shap_local_explanation(model, pipeline, X_processed)
-                st.plotly_chart(shap_fig, use_container_width=True)
+                st.plotly_chart(shap_fig, use_container_width=True, theme=None)
                 
                 # KEY DRIVER INSIGHT
                 top_feature = shap_df.iloc[0]["Feature"].replace("_", " ").title()
                 impact_dir = "increasing" if shap_df.iloc[0]["Impact"] > 0 else "decreasing"
                 
                 st.markdown(f"""
-                <div style="margin-top: 8px; padding: 12px 16px; background: #111827; border: 1px solid #1f2937; border-radius: 8px; font-size: 14px; color: #e5e7eb;">
+                <div style="margin-top: 8px; padding: 12px 16px; background: #f8fafc; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; font-size: 14px; color: #334155;">
                     <strong>Key Driver:</strong> {top_feature} is {impact_dir} win probability.
                 </div>
                 """, unsafe_allow_html=True)
@@ -1660,7 +1660,7 @@ with tab2:
                 </div>
                 """, unsafe_allow_html=True)
                 residual_fig = residual_plot(model, pipeline, df, target_col=target_col)
-                st.plotly_chart(residual_fig, use_container_width=True)
+                st.plotly_chart(residual_fig, use_container_width=True, theme=None)
 
             # ==============================
             #  AI EXPLANATION (LLM STYLE)
@@ -1669,10 +1669,8 @@ with tab2:
 
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, rgba(17,24,39,0.9), rgba(30,41,59,0.8));
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border: 1px solid rgba(255,255,255,0.08);
+                background: linear-gradient(135deg, #ffffff, #f1f5f9);
+                border: 1px solid rgba(0,0,0,0.08);
                 border-radius: 20px;
                 padding: 32px 36px;
                 margin-top: 8px;
@@ -1702,11 +1700,11 @@ with tab2:
                     <span style="
                         font-size: 18px;
                         font-weight: 700;
-                        color: #f1f5f9;
+                        color: #000000;
                         letter-spacing: -0.01em;">AI Explanation</span>
                 </div>
                 <div style="
-                    color: #cbd5e1;
+                    color: #334155;
                     font-size: 15px;
                     line-height: 2;
                     font-family: 'Inter', sans-serif;">
@@ -1727,7 +1725,7 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
             beeswarm_fig = shap_beeswarm_plot(model, pipeline, df, target_col=target_col)
-            st.plotly_chart(beeswarm_fig, use_container_width=True)
+            st.plotly_chart(beeswarm_fig, use_container_width=True, theme=None)
 
             # =============================
             #  PDF DOWNLOAD
@@ -1828,18 +1826,18 @@ with tab3:
         x=y,
         y=y_pred,
         labels={"x": "Actual", "y": "Predicted"},
-        template="plotly_dark",
+        template="plotly_white",
         title="Actual vs Predicted",
         opacity=0.5
     )
     fig1.update_traces(marker=dict(color="#3b82f6", size=5))
     fig1.update_layout(
-        font=dict(family="Inter", size=13),
+        font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=50, b=20)
     )
-    st.plotly_chart(fig1, use_container_width=True)
+    st.plotly_chart(fig1, use_container_width=True, theme=None)
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
@@ -1849,17 +1847,17 @@ with tab3:
     fig2 = px.histogram(
         residuals,
         nbins=40,
-        template="plotly_dark",
+        template="plotly_white",
         title="Residual Distribution",
         color_discrete_sequence=["#8b5cf6"]
     )
     fig2.update_layout(
-        font=dict(family="Inter", size=13),
+        font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=50, b=20)
     )
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, use_container_width=True, theme=None)
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
@@ -1894,17 +1892,17 @@ with tab3:
         x="SHAP Value",
         y="Feature",
         orientation="h",
-        template="plotly_dark",
+        template="plotly_white",
         title="Global SHAP Beeswarm"
     )
 
     fig_bee.update_traces(marker=dict(color="#8b5cf6", size=4, opacity=0.5))
     fig_bee.update_layout(
         height=700,
-        font=dict(family="Inter", size=13),
+        font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=50, b=20)
     )
 
-    st.plotly_chart(fig_bee, use_container_width=True)
+    st.plotly_chart(fig_bee, use_container_width=True, theme=None)
