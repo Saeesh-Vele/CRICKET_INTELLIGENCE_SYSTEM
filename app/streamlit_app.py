@@ -734,34 +734,67 @@ def render_live_score(data):
     run_rate = data.get("run_rate", 0.0)
 
     # Match status heuristic
-    if run_rate > 8:
-        match_status = f"{team_a} is in control"
-    elif run_rate > 6:
-        match_status = "Match is balanced"
+    if runs == 0 and overs_val == 0 and wickets == 0:
+        match_status = "Waiting for first ball"
+        momentum = "Neutral"
+        momentum_color = "#64748b"
+        rr_eval = "N/A"
+        rr_color = "#64748b"
+        win_prob = 50
+        lose_prob = 50
+        
+        score_html = f"""
+            <div>
+                <div style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+                    {data.get('status', 'Match starting...')}
+                </div>
+                <div style="font-size: 13px; color: #64748b; font-weight: 500;">
+                    Scorecard not yet available from provider
+                </div>
+            </div>
+        """
     else:
-        match_status = f"{team_b} gaining advantage"
+        if run_rate > 8:
+            match_status = f"{team_a} is in control"
+        elif run_rate > 6:
+            match_status = "Match is balanced"
+        else:
+            match_status = f"{team_b} gaining advantage"
+    
+        baseline_rr = 8.0
+        rr_eval = "Above par" if run_rate >= baseline_rr else "Below par"
+    
+        if run_rate >= 8 and wickets <= 4:
+            momentum = "Strong"
+        elif run_rate >= 6 and wickets <= 6:
+            momentum = "Stable"
+        else:
+            momentum = "Dropping"
+            
+        momentum_color = "#22c55e" if momentum == "Strong" else ("#f59e0b" if momentum == "Stable" else "#ef4444")
+        rr_color = "#22c55e" if rr_eval == "Above par" else "#f59e0b"
+        
+        # Win probability
+        remaining_overs = max(20 - overs_val, 1)
+        wickets_in_hand = max(10 - wickets, 0)
+        win_prob = min(100, max(0, round(
+            40 + (run_rate - 7) * 5 + wickets_in_hand * 3 - (20 - remaining_overs) * 0.8, 1
+        )))
+        lose_prob = round(100 - win_prob, 1)
 
-    baseline_rr = 8.0
-    rr_eval = "Above par" if run_rate >= baseline_rr else "Below par"
-
-    if run_rate >= 8 and wickets <= 4:
-        momentum = "Strong"
-    elif run_rate >= 6 and wickets <= 6:
-        momentum = "Stable"
-    else:
-        momentum = "Dropping"
-
-    # Win probability
-    remaining_overs = max(20 - overs_val, 1)
-    wickets_in_hand = max(10 - wickets, 0)
-    win_prob = min(100, max(0, round(
-        40 + (run_rate - 7) * 5 + wickets_in_hand * 3 - (20 - remaining_overs) * 0.8, 1
-    )))
-    lose_prob = round(100 - win_prob, 1)
-
-    # Momentum color
-    momentum_color = "#22c55e" if momentum == "Strong" else ("#f59e0b" if momentum == "Stable" else "#ef4444")
-    rr_color = "#22c55e" if rr_eval == "Above par" else "#f59e0b"
+        score_html = f"""
+            <div>
+                <div style="font-size: 52px; font-weight: 800; color: #000000;
+                    letter-spacing: -2px; line-height: 1;
+                    background: linear-gradient(135deg, #000000 0%, #334155 100%);
+                    -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {runs}/{wickets}
+                </div>
+                <div style="font-size: 13px; color: #64748b; margin-top: 8px; font-weight: 400;">
+                    After {overs_val} overs
+                </div>
+            </div>
+        """
 
     st.components.v1.html(f"""
     <style>
@@ -827,17 +860,7 @@ def render_live_score(data):
             display: flex; align-items: center; justify-content: space-between;
             padding: 28px 28px 24px 28px;
             border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <div>
-                <div style="font-size: 52px; font-weight: 800; color: #000000;
-                    letter-spacing: -2px; line-height: 1;
-                    background: linear-gradient(135deg, #000000 0%, #334155 100%);
-                    -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    {runs}/{wickets}
-                </div>
-                <div style="font-size: 13px; color: #64748b; margin-top: 8px; font-weight: 400;">
-                    After {overs_val} overs
-                </div>
-            </div>
+            {score_html}
             <div style="display: flex; gap: 6px;">
                 <div style="text-align: center; background: rgba(0,0,0,0.02);
                     border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
@@ -1201,6 +1224,7 @@ with tab2:
                     "wickets": int(score_data.get("wickets", 0) or 0),
                     "overs": api_overs,
                     "run_rate": api_rr,
+                    "status": score_data.get("status", "Match is live"),
                 }
 
                 api_features = transform_api_to_features(score_data)
@@ -1270,6 +1294,7 @@ with tab2:
             "wickets": manual_wickets,
             "overs": manual_overs,
             "run_rate": manual_rr,
+            "status": "Live Match (Manual Entry)",
         }
 
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
