@@ -263,6 +263,9 @@ hr { border-color: var(--border-subtle) !important; }
     transition: var(--transition-smooth) !important;
     box-shadow: none !important;
 }
+[data-testid="stButton"] > button * {
+    color: #ffffff !important;
+}
 [data-testid="stButton"] > button:hover {
     filter: brightness(0.9);
 }
@@ -290,8 +293,10 @@ hr { border-color: var(--border-subtle) !important; }
 
 /* ===== INPUTS ===== */
 [data-testid="stSelectbox"] > div > div,
-[data-testid="stNumberInput"] > div > div > input {
+[data-testid="stTextInput"] > div > div,
+[data-testid="stNumberInput"] > div > div {
     background: var(--bg-card) !important;
+    background-color: var(--bg-card) !important;
     border: 1px solid var(--border-subtle) !important;
     border-radius: 10px !important;
     color: var(--text-primary) !important;
@@ -299,8 +304,26 @@ hr { border-color: var(--border-subtle) !important; }
     font-size: 15px !important;
     box-shadow: none !important;
 }
+[data-testid="stTextInput"] div[data-baseweb="input"],
+[data-testid="stNumberInput"] div[data-baseweb="input"],
+[data-testid="stTextInput"] div[data-baseweb="base-input"],
+[data-testid="stNumberInput"] div[data-baseweb="base-input"] {
+    background-color: transparent !important;
+}
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input {
+    color: var(--text-primary) !important;
+    background-color: transparent !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+}
+[data-testid="stNumberInput"] button {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+    border: none !important;
+}
 [data-testid="stSelectbox"] > div > div:focus-within,
-[data-testid="stNumberInput"] > div > div > input:focus {
+[data-testid="stTextInput"] > div > div:focus-within,
+[data-testid="stNumberInput"] > div > div:focus-within {
     border-color: var(--accent-blue) !important;
 }
 
@@ -1267,7 +1290,9 @@ with tab2:
         with tm2:
             manual_team_b = st.text_input("Team B Name", value="Team B", key="manual_team_b")
         with tm3:
-            manual_stadium = st.text_input("Stadium Name", value="Unknown Stadium", key="manual_stadium")
+            all_venues = sorted(list(set(batsman_df["venue"].unique()) | set(bowler_df["venue"].unique())))
+            venue_options = ["Unknown Stadium"] + [v for v in all_venues if v != "Unknown Stadium"]
+            manual_stadium = st.selectbox("Stadium Name", options=venue_options, key="manual_stadium")
 
         st.markdown("")
 
