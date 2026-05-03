@@ -253,9 +253,9 @@ hr { border-color: var(--border-subtle) !important; }
 
 /* ===== BUTTONS ===== */
 [data-testid="stButton"] > button {
-    background: var(--accent-blue) !important;
-    color: #ffffff !important;
-    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid var(--border-subtle) !important;
     border-radius: 10px !important;
     font-weight: 500 !important;
     font-size: 15px !important;
@@ -264,10 +264,10 @@ hr { border-color: var(--border-subtle) !important; }
     box-shadow: none !important;
 }
 [data-testid="stButton"] > button * {
-    color: #ffffff !important;
+    color: #000000 !important;
 }
 [data-testid="stButton"] > button:hover {
-    filter: brightness(0.9);
+    background: rgba(0,0,0,0.05) !important;
 }
 
 /* ===== DOWNLOAD BUTTON ===== */
@@ -325,6 +325,28 @@ hr { border-color: var(--border-subtle) !important; }
 [data-testid="stTextInput"] > div > div:focus-within,
 [data-testid="stNumberInput"] > div > div:focus-within {
     border-color: var(--accent-blue) !important;
+}
+
+/* ===== DROPDOWN LIST (POPOVER) ===== */
+div[data-baseweb="popover"] > div,
+div[data-baseweb="popover"] ul,
+div[data-baseweb="menu"] {
+    background-color: var(--bg-primary) !important;
+}
+div[data-baseweb="popover"] li,
+div[data-baseweb="menu"] li,
+div[data-baseweb="popover"] div[role="option"],
+div[data-baseweb="menu"] div[role="option"] {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+}
+div[data-baseweb="popover"] li:hover,
+div[data-baseweb="menu"] li:hover,
+div[data-baseweb="popover"] div[role="option"]:hover,
+div[data-baseweb="menu"] div[role="option"]:hover,
+div[data-baseweb="popover"] div[aria-selected="true"],
+div[data-baseweb="menu"] div[aria-selected="true"] {
+    background-color: var(--bg-secondary) !important;
 }
 
 /* ===== TABS ===== */
@@ -620,7 +642,7 @@ def shap_local_explanation(model, pipeline, X_processed):
         font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=20),
+        margin=dict(l=20, r=20, t=50, b=80),
         coloraxis_showscale=False
     )
 
@@ -677,7 +699,7 @@ def probability_distribution(prediction, std_dev, label):
         font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=20)
+        margin=dict(l=20, r=20, t=50, b=80)
     )
 
     return fig, lower, upper
@@ -735,7 +757,7 @@ def residual_plot(model, pipeline, df, target_col):
         font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=20)
+        margin=dict(l=20, r=20, t=50, b=80)
     )
 
     return fig
@@ -1011,7 +1033,7 @@ def shap_beeswarm_plot(model, pipeline, df, target_col):
         font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=20),
+        margin=dict(l=20, r=20, t=50, b=80),
         coloraxis_showscale=False
     )
 
@@ -1885,7 +1907,7 @@ with tab3:
         font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=20)
+        margin=dict(l=20, r=20, t=50, b=80)
     )
     st.plotly_chart(fig1, use_container_width=True, theme=None)
 
@@ -1905,7 +1927,7 @@ with tab3:
         font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=20)
+        margin=dict(l=20, r=20, t=50, b=80)
     )
     st.plotly_chart(fig2, use_container_width=True, theme=None)
 
@@ -1952,7 +1974,7 @@ with tab3:
         font=dict(family="Inter", size=13, color="#000000"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=20)
+        margin=dict(l=20, r=20, t=50, b=80)
     )
 
     st.plotly_chart(fig_bee, use_container_width=True, theme=None)
