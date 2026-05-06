@@ -781,43 +781,10 @@ def render_live_score(data):
     # Match status heuristic
     if runs == 0 and overs_val == 0 and wickets == 0:
         match_status = "Waiting for first ball"
-        momentum = "Neutral"
-        momentum_color = "#64748b"
-        rr_eval = "N/A"
-        rr_color = "#64748b"
         win_prob = 50
         lose_prob = 50
-        
-        score_html = f"""
-            <div>
-                <div style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
-                    {data.get('status', 'Match starting...')}
-                </div>
-                <div style="font-size: 13px; color: #64748b; font-weight: 500;">
-                    Scorecard not yet available from provider
-                </div>
-            </div>
-        """
     else:
-        if run_rate > 8:
-            match_status = f"{team_a} is in control"
-        elif run_rate > 6:
-            match_status = "Match is balanced"
-        else:
-            match_status = f"{team_b} gaining advantage"
-    
-        baseline_rr = 8.0
-        rr_eval = "Above par" if run_rate >= baseline_rr else "Below par"
-    
-        if run_rate >= 8 and wickets <= 4:
-            momentum = "Strong"
-        elif run_rate >= 6 and wickets <= 6:
-            momentum = "Stable"
-        else:
-            momentum = "Dropping"
-            
-        momentum_color = "#22c55e" if momentum == "Strong" else ("#f59e0b" if momentum == "Stable" else "#ef4444")
-        rr_color = "#22c55e" if rr_eval == "Above par" else "#f59e0b"
+        match_status = data.get("status", "Live Match")
         
         # Win probability
         remaining_overs = max(20 - overs_val, 1)
@@ -827,160 +794,162 @@ def render_live_score(data):
         )))
         lose_prob = round(100 - win_prob, 1)
 
-        score_html = f"""
-            <div>
-                <div style="font-size: 52px; font-weight: 800; color: #000000;
-                    letter-spacing: -2px; line-height: 1;
-                    background: linear-gradient(135deg, #000000 0%, #334155 100%);
-                    -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    {runs}/{wickets}
-                </div>
-                <div style="font-size: 13px; color: #64748b; margin-top: 8px; font-weight: 400;">
-                    After {overs_val} overs
-                </div>
-            </div>
-        """
-
     st.components.v1.html(f"""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        @keyframes livePulse {{
-            0%, 100% {{ opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }}
-            50% {{ opacity: 0.7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }}
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        body {{ margin: 0; padding: 0; background-color: transparent; }}
+        .google-card {{
+            background-color: #202124;
+            color: #e8eaed;
+            border-radius: 12px;
+            font-family: 'Roboto', Arial, sans-serif;
+            overflow: hidden;
+            border: 1px solid #3c4043;
+            max-width: 100%;
+            margin: 0 auto;
         }}
-        @keyframes fadeIn {{
-            from {{ opacity: 0; transform: translateY(6px); }}
-            to {{ opacity: 1; transform: translateY(0); }}
+        .top-bar {{
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid #3c4043;
+            font-size: 14px;
         }}
+        .top-bar-left {{ color: #8ab4f8; }}
+        .top-bar-right {{ color: #81c995; font-weight: 500; }}
+        .score-area {{
+            padding: 24px 16px 16px 16px;
+        }}
+        .teams-container {{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }}
+        .team-col {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 25%;
+        }}
+        .team-logo {{
+            width: 48px;
+            height: 48px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }}
+        .team-logo img {{ width: 100%; height: 100%; object-fit: contain; padding: 4px; }}
+        .team-name {{ font-size: 16px; text-align: center; }}
+        .scores-col {{
+            display: flex;
+            justify-content: space-between;
+            width: 50%;
+            padding: 0 16px;
+        }}
+        .score-left {{ text-align: left; }}
+        .score-right {{ text-align: right; color: #e8eaed; font-size: 16px; padding-top: 4px; }}
+        .main-score {{ font-size: 20px; color: #e8eaed; line-height: 1.2; font-weight: 500; }}
+        .overs {{ font-size: 14px; color: #9aa0a6; }}
+        .status-text {{
+            text-align: center;
+            margin-top: 24px;
+            font-size: 14px;
+            color: #e8eaed;
+        }}
+        .sub-status {{ color: #9aa0a6; margin-top: 4px; font-size: 13px; }}
+        .prob-area {{
+            border-top: 1px solid #3c4043;
+            padding: 16px;
+        }}
+        .prob-title {{
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #e8eaed;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }}
+        .prob-teams {{
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }}
+        .prob-team-left {{ color: #f28b82; text-align: left; }}
+        .prob-team-right {{ color: #f28b82; text-align: right; }}
+        .prob-bar-container {{
+            display: flex;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }}
+        .prob-bar-left {{ background-color: #f28b82; border-right: 2px solid #202124; }}
+        .prob-bar-right {{ background-color: #f28b82; }}
     </style>
-
-    <div style="
-        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
-        border: 1px solid rgba(0,0,0,0.08);
-        border-radius: 20px;
-        padding: 0;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        color: #000000;
-        overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02) inset;
-        animation: fadeIn 0.4s ease;">
-
-        <!-- MATCH HEADER -->
-        <div style="
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(139,92,246,0.05) 100%);
-            border-bottom: 1px solid rgba(0,0,0,0.06);">
-            <div>
-                <div style="
-                    display: flex; align-items: center; gap: 8px;
-                    font-size: 10px; font-weight: 600;
-                    text-transform: uppercase; letter-spacing: 1.5px;
-                    color: #475569; margin-bottom: 6px;">
-                    ⚡ <span>Live Match • {{match_status}}</span>
-                </div>
-                <div style="font-size: 20px; font-weight: 700; color: #000000; letter-spacing: -0.5px;">
-                    {team_a} <span style="color:#64748b; font-weight:400;">vs</span> {team_b}
-                </div>
-                <div style="font-size: 12px; color: #64748b; margin-top: 5px; display:flex; align-items:center; gap:4px;">
-                    📍 {stadium}
-                </div>
-            </div>
-            <div style="
-                display: flex; align-items: center; gap: 8px;
-                background: rgba(34,197,94,0.1);
-                border: 1px solid rgba(34,197,94,0.2);
-                border-radius: 20px; padding: 6px 14px;">
-                <span style="display: inline-block; width: 8px; height: 8px;
-                    border-radius: 50%; background: #22c55e;
-                    animation: livePulse 2s ease-in-out infinite;"></span>
-                <span style="font-size: 11px; font-weight: 700;
-                    text-transform: uppercase; letter-spacing: 1.2px;
-                    color: #22c55e;">Live</span>
-            </div>
+    
+    <div class="google-card">
+        <div class="top-bar">
+            <span class="top-bar-left">IPL</span>
+            <span class="top-bar-right">Live</span>
         </div>
-
-        <!-- SCORE PANEL -->
-        <div style="
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 28px 28px 24px 28px;
-            border-bottom: 1px solid rgba(0,0,0,0.04);">
-            {score_html}
-            <div style="display: flex; gap: 6px;">
-                <div style="text-align: center; background: rgba(0,0,0,0.02);
-                    border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
-                    padding: 14px 20px; min-width: 80px;">
-                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
-                        color: #64748b; font-weight: 600; margin-bottom: 6px;">Overs</div>
-                    <div style="font-size: 22px; font-weight: 700; color: #000000;">{overs_val}</div>
-                </div>
-                <div style="text-align: center; background: rgba(0,0,0,0.02);
-                    border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
-                    padding: 14px 20px; min-width: 80px;">
-                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
-                        color: #64748b; font-weight: 600; margin-bottom: 6px;">Wickets</div>
-                    <div style="font-size: 22px; font-weight: 700; color: #000000;">{wickets}</div>
-                </div>
-                <div style="text-align: center; background: rgba(0,0,0,0.02);
-                    border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
-                    padding: 14px 20px; min-width: 120px;">
-                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
-                        color: #64748b; font-weight: 600; margin-bottom: 6px;">Run Rate</div>
-                    <div style="font-size: 22px; font-weight: 700; color: #000000;">
-                        {run_rate}
+        
+        <div class="score-area">
+            <div class="teams-container">
+                <div class="team-col">
+                    <div class="team-logo">
+                        <img src="https://ui-avatars.com/api/?name={team_a}&background=random&color=fff&size=128" alt="{team_a}">
                     </div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;">
-                        <span style="display:inline-block; width:6px; height:6px; border-radius:50%;
-                            background:{rr_color};"></span>
-                        <span style="font-size: 10px; color: {rr_color}; font-weight: 500;">{rr_eval}</span>
+                    <div class="team-name">{team_a}</div>
+                </div>
+                
+                <div class="scores-col">
+                    <div class="score-left">
+                        <div class="main-score">{runs}/{wickets}</div>
+                        <div class="overs">({overs_val})</div>
+                    </div>
+                    <div class="score-right">
+                        Yet to bat
                     </div>
                 </div>
+                
+                <div class="team-col">
+                    <div class="team-logo">
+                        <img src="https://ui-avatars.com/api/?name={team_b}&background=random&color=fff&size=128" alt="{team_b}">
+                    </div>
+                    <div class="team-name">{team_b}</div>
+                </div>
+            </div>
+            
+            <div class="status-text">
+                {match_status} · CRR: {run_rate}
+                <div class="sub-status">{stadium}</div>
             </div>
         </div>
-
-        <!-- MOMENTUM STRIP -->
-        <div style="display:flex; align-items:center; justify-content:center; gap:8px;
-            padding: 10px 24px; background: rgba(0,0,0,0.015);
-            border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <span style="font-size:10px; text-transform:uppercase; letter-spacing:1.5px;
-                color:#64748b; font-weight:600;">Momentum</span>
-            <span style="display:inline-block; width:6px; height:6px; border-radius:50%;
-                background:{momentum_color};"></span>
-            <span style="font-size:12px; font-weight:600; color:{momentum_color};">{momentum}</span>
-        </div>
-
-        <!-- MATCH PROBABILITY -->
-        <div style="padding: 20px 28px 24px 28px;">
-            <div style="display: flex; align-items: center; gap: 8px;
-                font-size: 10px; font-weight: 600;
-                text-transform: uppercase; letter-spacing: 1.5px;
-                color: #64748b; margin-bottom: 12px;">
-                📊 <span>Match Probability</span>
-            </div>
-            <div style="display: flex; width: 100%; height: 8px;
-                border-radius: 10px; overflow: hidden; background: #e2e8f0;">
-                <div style="width: {win_prob}%; background: linear-gradient(90deg, #22c55e, #4ade80);
-                    border-radius: 10px 0 0 10px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);"></div>
-                <div style="width: {lose_prob}%; background: linear-gradient(90deg, #f87171, #ef4444);
-                    border-radius: 0 10px 10px 0; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="display:inline-block; width:8px; height:8px; border-radius:2px;
-                        background: linear-gradient(135deg, #22c55e, #4ade80);"></span>
-                    <span style="font-size: 13px; font-weight: 600; color: #22c55e;">{team_a}</span>
-                    <span style="font-size: 13px; font-weight: 700; color: #22c55e;">{win_prob}%</span>
+        
+        <div class="prob-area">
+            <div class="prob-title">LIVE WIN PROBABILITY</div>
+            <div class="prob-teams">
+                <div class="prob-team-left">
+                    <div>{team_a}</div>
+                    <div style="font-weight: 400; margin-top: 4px;">{win_prob}%</div>
                 </div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-size: 13px; font-weight: 600; color: #ef4444;">{team_b}</span>
-                    <span style="font-size: 13px; font-weight: 700; color: #ef4444;">{lose_prob}%</span>
-                    <span style="display:inline-block; width:8px; height:8px; border-radius:2px;
-                        background: linear-gradient(135deg, #f87171, #ef4444);"></span>
+                <div class="prob-team-right">
+                    <div>{team_b}</div>
+                    <div style="font-weight: 400; margin-top: 4px;">{lose_prob}%</div>
                 </div>
+            </div>
+            <div class="prob-bar-container">
+                <div class="prob-bar-left" style="width: {win_prob}%;"></div>
+                <div class="prob-bar-right" style="width: {lose_prob}%;"></div>
             </div>
         </div>
     </div>
-    """.replace("{{match_status}}", match_status), height=380)
+    """, height=380)
 
 
 # ----------------------------------------------------------
