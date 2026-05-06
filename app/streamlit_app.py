@@ -1229,10 +1229,38 @@ with tab2:
                 api_overs = float(score_data.get("overs", 0) or 0)
                 api_runs = int(score_data.get("runs", 0) or 0)
                 api_rr = round(api_runs / max(api_overs, 0.1), 2)
+                
+                team1_name = score_data.get("team1", "Team A")
+                team2_name = score_data.get("team2", "Team B")
+                inning_label = score_data.get("inning_label", "")
+                status_text = score_data.get("status", "").lower()
+                
+                batting_team = team1_name
+                bowling_team = team2_name
+                
+                if team2_name.lower() in inning_label.lower():
+                    batting_team = team2_name
+                    bowling_team = team1_name
+                elif team1_name.lower() in inning_label.lower():
+                    batting_team = team1_name
+                    bowling_team = team2_name
+                else:
+                    if team1_name.lower() in status_text and ("opt to bowl" in status_text or "elected to bowl" in status_text or "chose to bowl" in status_text):
+                        batting_team = team2_name
+                        bowling_team = team1_name
+                    elif team2_name.lower() in status_text and ("opt to bowl" in status_text or "elected to bowl" in status_text or "chose to bowl" in status_text):
+                        batting_team = team1_name
+                        bowling_team = team2_name
+                    elif team1_name.lower() in status_text and ("opt to bat" in status_text or "elected to bat" in status_text or "chose to bat" in status_text):
+                        batting_team = team1_name
+                        bowling_team = team2_name
+                    elif team2_name.lower() in status_text and ("opt to bat" in status_text or "elected to bat" in status_text or "chose to bat" in status_text):
+                        batting_team = team2_name
+                        bowling_team = team1_name
 
                 live_score_data = {
-                    "team_a": score_data.get("team1", "Team A"),
-                    "team_b": score_data.get("team2", "Team B"),
+                    "team_a": batting_team,
+                    "team_b": bowling_team,
                     "stadium": score_data.get("venue", "Unknown Stadium"),
                     "runs": api_runs,
                     "wickets": int(score_data.get("wickets", 0) or 0),
@@ -1318,15 +1346,23 @@ with tab2:
     # ==============================
     #  RENDER LIVE SCORE (BOTH MODES)
     # ==============================
-    st.markdown("""
-    <div class="section-header">
-        <div class="section-icon">🔴</div>
-        <div>
-            <div class="section-title">Live Score</div>
-            <div class="section-subtitle">Real-time match overview</div>
+    score_header_col1, score_header_col2 = st.columns([4, 1])
+    with score_header_col1:
+        st.markdown("""
+        <div class="section-header">
+            <div class="section-icon">🔴</div>
+            <div>
+                <div class="section-title">Live Score</div>
+                <div class="section-subtitle">Real-time match overview</div>
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    with score_header_col2:
+        if st.session_state.get("input_mode") == "Live API Mode":
+            # Add a small padding to vertically align with the header
+            st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 Refresh Score"):
+                st.rerun()
 
     render_live_score(live_score_data)
 

@@ -8,6 +8,7 @@
 # ==========================================================
 
 import requests
+import time
 
 API_BASE_URL = "https://api.cricapi.com/v1"
 API_KEY = "41c57219-ae5d-4921-88c0-1aca3fa82ef0"
@@ -25,7 +26,7 @@ def fetch_live_matches():
     """
     try:
         url = f"{API_BASE_URL}/currentMatches"
-        params = {"apikey": API_KEY, "offset": 0}
+        params = {"apikey": API_KEY, "offset": 0, "t": int(time.time() * 1000)}
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
 
@@ -119,7 +120,7 @@ def fetch_match_score(match_id):
     """
     try:
         url = f"{API_BASE_URL}/match_info"
-        params = {"apikey": API_KEY, "id": match_id}
+        params = {"apikey": API_KEY, "id": match_id, "t": int(time.time() * 1000)}
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
 
