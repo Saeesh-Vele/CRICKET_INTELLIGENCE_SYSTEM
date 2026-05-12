@@ -56,6 +56,7 @@ streamlit run app/streamlit_app.py
 - **PDF Reports** — One-click downloadable prediction reports
 
 
+**Commands**
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
