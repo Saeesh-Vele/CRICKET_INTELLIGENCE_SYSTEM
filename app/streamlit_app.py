@@ -1144,7 +1144,7 @@ with tab2:
 
     # Initialize session state
     if "input_mode" not in st.session_state:
-        st.session_state["input_mode"] = "Manual Mode"
+        st.session_state["input_mode"] = "Select Mode"
     if "api_score_data" not in st.session_state:
         st.session_state["api_score_data"] = None
     if "live_matches_cache" not in st.session_state:
@@ -1154,7 +1154,15 @@ with tab2:
     if "_live_auto_refresh" not in st.session_state:
         st.session_state["_live_auto_refresh"] = False
 
-    mode = st.radio("Select Mode", ["Manual Mode", "Live API Mode"], horizontal=True, key="mode_radio")
+    mode = st.selectbox(
+        "Select Mode",
+        ["Select Mode", "Manual Mode", "Live API Mode"],
+        index=["Select Mode", "Manual Mode", "Live API Mode"].index(
+            st.session_state.get("input_mode", "Select Mode")
+        ),
+        key="mode_select",
+        label_visibility="collapsed"
+    )
 
     # Handle mode switching cleanly
     if mode != st.session_state.get("input_mode"):
@@ -1185,10 +1193,14 @@ with tab2:
 
     api_features = None  # Will hold transformed features if live mode
 
+    if st.session_state["input_mode"] == "Select Mode":
+        st.info("👆 Please select a mode from the dropdown above to get started.")
+        st.stop()
+
     # --------------------------------------------------
     # CASE 1: LIVE API MODE
     # --------------------------------------------------
-    if st.session_state["input_mode"] == "Live API Mode":
+    elif st.session_state["input_mode"] == "Live API Mode":
 
         st.markdown("""
         <div class="section-header">
@@ -1290,7 +1302,7 @@ with tab2:
     # --------------------------------------------------
     # CASE 2: MANUAL MODE
     # --------------------------------------------------
-    else:
+    elif st.session_state["input_mode"] == "Manual Mode":
         st.markdown("""
         <div class="section-header">
             <div class="section-icon">🏏</div>
@@ -1878,109 +1890,116 @@ with tab3:
 
     model_choice = st.selectbox(
         "Select Model",
-        ["Runs Model", "Wickets Model"]
+        ["Select Model", "Runs Model", "Wickets Model"],
+        index=0,
+        key="analytics_model_select",
+        label_visibility="collapsed"
     )
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    if model_choice == "Runs Model":
-        df = batsman_df
-        target = "runs_next_match"
-        model = runs_model
-        pipeline = runs_pipeline
+    if model_choice == "Select Model":
+        st.info("👆 Please select a model from the dropdown above to view analytics.")
     else:
-        df = bowler_df
-        target = "wickets_next_match"
-        model = wickets_model
-        pipeline = wickets_pipeline
 
-    X = df.drop(columns=[target])
-    y = df[target]
-    X_processed = pipeline.transform(X)
-    y_pred = model.predict(X_processed)
+        if model_choice == "Runs Model":
+            df = batsman_df
+            target = "runs_next_match"
+            model = runs_model
+            pipeline = runs_pipeline
+        else:
+            df = bowler_df
+            target = "wickets_next_match"
+            model = wickets_model
+            pipeline = wickets_pipeline
 
-    # Actual vs Predicted
-    fig1 = px.scatter(
-        x=y,
-        y=y_pred,
-        labels={"x": "Actual", "y": "Predicted"},
-        template="plotly_white",
-        title="Actual vs Predicted",
-        opacity=0.5
-    )
-    fig1.update_traces(marker=dict(color="#3b82f6", size=5))
-    fig1.update_layout(
-        font=dict(family="Inter", size=13, color="#000000"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=80)
-    )
-    st.plotly_chart(fig1, use_container_width=True, theme=None)
+        X = df.drop(columns=[target])
+        y = df[target]
+        X_processed = pipeline.transform(X)
+        y_pred = model.predict(X_processed)
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        # Actual vs Predicted
+        fig1 = px.scatter(
+            x=y,
+            y=y_pred,
+            labels={"x": "Actual", "y": "Predicted"},
+            template="plotly_white",
+            title="Actual vs Predicted",
+            opacity=0.5
+        )
+        fig1.update_traces(marker=dict(color="#3b82f6", size=5))
+        fig1.update_layout(
+            font=dict(family="Inter", size=13, color="#000000"),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=20, r=20, t=50, b=80)
+        )
+        st.plotly_chart(fig1, use_container_width=True, theme=None)
 
-    # Residuals
-    residuals = y - y_pred
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    fig2 = px.histogram(
-        residuals,
-        nbins=40,
-        template="plotly_white",
-        title="Residual Distribution",
-        color_discrete_sequence=["#8b5cf6"]
-    )
-    fig2.update_layout(
-        font=dict(family="Inter", size=13, color="#000000"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=80)
-    )
-    st.plotly_chart(fig2, use_container_width=True, theme=None)
+        # Residuals
+        residuals = y - y_pred
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        fig2 = px.histogram(
+            residuals,
+            nbins=40,
+            template="plotly_white",
+            title="Residual Distribution",
+            color_discrete_sequence=["#8b5cf6"]
+        )
+        fig2.update_layout(
+            font=dict(family="Inter", size=13, color="#000000"),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=20, r=20, t=50, b=80)
+        )
+        st.plotly_chart(fig2, use_container_width=True, theme=None)
 
-    # Global SHAP
-    sample = df.sample(300, random_state=42)
-    X_sample = sample.drop(columns=[target])
-    X_sample_processed = pipeline.transform(X_sample)
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    if hasattr(X_sample_processed, "toarray"):
-        X_sample_processed = X_sample_processed.toarray()
+        # Global SHAP
+        sample = df.sample(300, random_state=42)
+        X_sample = sample.drop(columns=[target])
+        X_sample_processed = pipeline.transform(X_sample)
 
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_sample_processed)
+        if hasattr(X_sample_processed, "toarray"):
+            X_sample_processed = X_sample_processed.toarray()
 
-    feature_names = pipeline.get_feature_names_out()
-    numeric_indices = [
-        i for i, name in enumerate(feature_names)
-        if name.startswith("num__")
-    ]
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_sample_processed)
 
-    shap_values_num = shap_values[:, numeric_indices]
-    clean_names = [
-        feature_names[i].replace("num__", "")
-        for i in numeric_indices
-    ]
+        feature_names = pipeline.get_feature_names_out()
+        numeric_indices = [
+            i for i, name in enumerate(feature_names)
+            if name.startswith("num__")
+        ]
 
-    shap_df = pd.DataFrame(shap_values_num, columns=clean_names)
-    shap_long = shap_df.melt(var_name="Feature", value_name="SHAP Value")
+        shap_values_num = shap_values[:, numeric_indices]
+        clean_names = [
+            feature_names[i].replace("num__", "")
+            for i in numeric_indices
+        ]
 
-    fig_bee = px.strip(
-        shap_long,
-        x="SHAP Value",
-        y="Feature",
-        orientation="h",
-        template="plotly_white",
-        title="Global SHAP Beeswarm"
-    )
+        shap_df = pd.DataFrame(shap_values_num, columns=clean_names)
+        shap_long = shap_df.melt(var_name="Feature", value_name="SHAP Value")
 
-    fig_bee.update_traces(marker=dict(color="#8b5cf6", size=4, opacity=0.5))
-    fig_bee.update_layout(
-        height=700,
-        font=dict(family="Inter", size=13, color="#000000"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=50, b=80)
-    )
+        fig_bee = px.strip(
+            shap_long,
+            x="SHAP Value",
+            y="Feature",
+            orientation="h",
+            template="plotly_white",
+            title="Global SHAP Beeswarm"
+        )
 
-    st.plotly_chart(fig_bee, use_container_width=True, theme=None)
+        fig_bee.update_traces(marker=dict(color="#8b5cf6", size=4, opacity=0.5))
+        fig_bee.update_layout(
+            height=700,
+            font=dict(family="Inter", size=13, color="#000000"),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=20, r=20, t=50, b=80)
+        )
+
+        st.plotly_chart(fig_bee, use_container_width=True, theme=None)
