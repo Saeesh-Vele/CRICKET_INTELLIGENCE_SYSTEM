@@ -777,6 +777,30 @@ def render_live_score(data):
     wickets = data.get("wickets", 0)
     overs_val = data.get("overs", 0)
     run_rate = data.get("run_rate", 0.0)
+    
+    t1_str = data.get("team1_score_str")
+    if not t1_str:
+        t1_str = f"{runs}/{wickets} ({overs_val})"
+        
+    t2_str = data.get("team2_score_str")
+    if not t2_str:
+        t2_str = "Yet to bat"
+
+    if t1_str:
+        parts = t1_str.split(" ")
+        r_w = parts[0] if len(parts) > 0 else "0/0"
+        ov = parts[1] if len(parts) > 1 else "(0.0)"
+        team_a_score_html = f'<div class="main-score" style="text-align: left; color: #e8eaed; font-size: 20px;">{r_w}</div><div class="overs" style="text-align: left;">{ov}</div>'
+    else:
+        team_a_score_html = '<div class="main-score" style="text-align: left; color: #e8eaed; font-size: 20px;">0/0</div><div class="overs" style="text-align: left;">(0.0)</div>'
+
+    if t2_str and t2_str != "Yet to bat":
+        parts = t2_str.split(" ")
+        r_w = parts[0] if len(parts) > 0 else "0/0"
+        ov = parts[1] if len(parts) > 1 else "(0.0)"
+        team_b_score_html = f'<div class="main-score" style="text-align: right; color: #e8eaed; font-size: 20px;">{r_w}</div><div class="overs" style="text-align: right;">{ov}</div>'
+    else:
+        team_b_score_html = '<div style="text-align: right; color: #e8eaed; font-size: 16px; padding-top: 4px;">Yet to bat</div>'
 
     # Match status heuristic
     if runs == 0 and overs_val == 0 and wickets == 0:
@@ -894,7 +918,7 @@ def render_live_score(data):
     
     <div class="google-card">
         <div class="top-bar">
-            <span class="top-bar-left">IPL</span>
+            <span class="top-bar-left">{data.get("league", "Cricket")}</span>
             <span class="top-bar-right">Live</span>
         </div>
         
@@ -909,11 +933,10 @@ def render_live_score(data):
                 
                 <div class="scores-col">
                     <div class="score-left">
-                        <div class="main-score">{runs}/{wickets}</div>
-                        <div class="overs">({overs_val})</div>
+                        {team_a_score_html}
                     </div>
                     <div class="score-right">
-                        Yet to bat
+                        {team_b_score_html}
                     </div>
                 </div>
                 
@@ -1232,41 +1255,19 @@ with tab2:
                 
                 team1_name = score_data.get("team1", "Team A")
                 team2_name = score_data.get("team2", "Team B")
-                inning_label = score_data.get("inning_label", "")
-                status_text = score_data.get("status", "").lower()
-                
-                batting_team = team1_name
-                bowling_team = team2_name
-                
-                if team2_name.lower() in inning_label.lower():
-                    batting_team = team2_name
-                    bowling_team = team1_name
-                elif team1_name.lower() in inning_label.lower():
-                    batting_team = team1_name
-                    bowling_team = team2_name
-                else:
-                    if team1_name.lower() in status_text and ("opt to bowl" in status_text or "elected to bowl" in status_text or "chose to bowl" in status_text):
-                        batting_team = team2_name
-                        bowling_team = team1_name
-                    elif team2_name.lower() in status_text and ("opt to bowl" in status_text or "elected to bowl" in status_text or "chose to bowl" in status_text):
-                        batting_team = team1_name
-                        bowling_team = team2_name
-                    elif team1_name.lower() in status_text and ("opt to bat" in status_text or "elected to bat" in status_text or "chose to bat" in status_text):
-                        batting_team = team1_name
-                        bowling_team = team2_name
-                    elif team2_name.lower() in status_text and ("opt to bat" in status_text or "elected to bat" in status_text or "chose to bat" in status_text):
-                        batting_team = team2_name
-                        bowling_team = team1_name
 
                 live_score_data = {
-                    "team_a": batting_team,
-                    "team_b": bowling_team,
+                    "team_a": score_data.get("team1_ordered", team1_name),
+                    "team_b": score_data.get("team2_ordered", team2_name),
                     "stadium": score_data.get("venue", "Unknown Stadium"),
                     "runs": api_runs,
                     "wickets": int(score_data.get("wickets", 0) or 0),
                     "overs": api_overs,
                     "run_rate": api_rr,
                     "status": score_data.get("status", "Match is live"),
+                    "team1_score_str": score_data.get("team1_score_str", ""),
+                    "team2_score_str": score_data.get("team2_score_str", "Yet to bat"),
+                    "league": "IPL",
                 }
 
                 api_features = transform_api_to_features(score_data)
@@ -1280,7 +1281,7 @@ with tab2:
                 st.session_state["api_score_data"] = None
                 st.session_state["_live_auto_refresh"] = False
         else:
-            st.warning("⚠️ No IPL live match currently available.")
+            st.warning("⚠️ No IPL live match currently available. IPL matches will appear here automatically when a game is in progress.")
             st.session_state["api_score_data"] = None
             st.session_state["_live_auto_refresh"] = False
 

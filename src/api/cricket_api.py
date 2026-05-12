@@ -18,30 +18,48 @@ API_KEY = "41c57219-ae5d-4921-88c0-1aca3fa82ef0"
 # ----------------------------------------------------------
 def fetch_live_matches():
     """
-    Calls the /matches endpoint with status=live to get
-    all currently live cricket matches.
+    Calls the /currentMatches endpoint to get all currently
+    live cricket matches. Paginates through all pages (the API
+    returns 25 matches per page).
 
     Returns:
         list[dict] | None: List of live match objects, or None on error.
     """
     try:
-        url = f"{API_BASE_URL}/currentMatches"
-        params = {"apikey": API_KEY, "offset": 0, "t": int(time.time() * 1000)}
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
+        all_matches = []
+        offset = 0
+        page_size = 25
 
-        data = response.json()
+        while True:
+            url = f"{API_BASE_URL}/currentMatches"
+            params = {"apikey": API_KEY, "offset": offset, "t": int(time.time() * 1000)}
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
 
-        if data.get("status") != "success":
-            return None
+            data = response.json()
 
-        matches = data.get("data", [])
-        if not matches or not isinstance(matches, list):
+            if data.get("status") != "success":
+                break
+
+            page_matches = data.get("data", [])
+            if not page_matches or not isinstance(page_matches, list):
+                break
+
+            all_matches.extend(page_matches)
+
+            # Check if there are more pages
+            info = data.get("info", {})
+            total_rows = info.get("totalRows", 0)
+            if offset + page_size >= total_rows:
+                break
+            offset += page_size
+
+        if not all_matches:
             return None
 
         # Filter for truly live matches (status string heuristic)
         live_matches = []
-        for m in matches:
+        for m in all_matches:
             if not isinstance(m, dict):
                 continue
             status = (m.get("status") or "").lower()
@@ -64,15 +82,16 @@ def fetch_live_matches():
 # ----------------------------------------------------------
 # 1b. FILTER IPL MATCHES ONLY
 # ----------------------------------------------------------
-_IPL_KEYWORDS = ["ipl", "indian premier league", "tata ipl"]
+_IPL_KEYWORDS = ["ipl", "indian premier league", "tata ipl", "premier league"]
 
 
 def filter_ipl_matches(matches):
     """
     Filters a list of match objects to return ONLY IPL matches.
 
-    Checks the 'series', 'name', and 'competition' fields for
-    IPL-related keywords (case-insensitive).
+    The CricAPI v1 currentMatches endpoint often returns series=None,
+    so we primarily check the 'name' field where the series info is
+    embedded (e.g. "CSK vs MI, 42nd Match, Indian Premier League 2025").
 
     Args:
         matches (list[dict]): Live match objects from fetch_live_matches().
@@ -88,14 +107,13 @@ def filter_ipl_matches(matches):
         if not isinstance(m, dict):
             continue
 
-        # Check multiple fields where series/competition name may appear
-        series = (m.get("series") or m.get("series_id") or "").lower()
+        # The API often has series=None; the series name is in 'name'
         name = (m.get("name") or "").lower()
+        series = (m.get("series") or "").lower()
         competition = (m.get("competition") or "").lower()
-        match_type = (m.get("matchType") or "").lower()
 
         # Combine all searchable text
-        searchable = f"{series} {name} {competition}"
+        searchable = f"{name} {series} {competition}"
 
         if any(kw in searchable for kw in _IPL_KEYWORDS):
             ipl_matches.append(m)
@@ -159,19 +177,50 @@ def extract_score_from_match(match_data):
 
         # Extract the latest innings score
         scores = match_data.get("score") or []
+        
+        team1_ordered = team1
+        team2_ordered = team2
+        team1_score_str = ""
+        team2_score_str = "Yet to bat"
+        
         runs = 0
         wickets_val = 0
         overs = 0.0
         inning_label = ""
 
         if scores and isinstance(scores, list):
-            # Use the LAST innings entry (most recent)
-            latest = scores[-1] if isinstance(scores[-1], dict) else {}
-            runs = latest.get("r", 0) or 0
-            wickets_val = latest.get("w", 0) or 0
-            overs_raw = latest.get("o", 0) or 0
-            overs = float(overs_raw)
-            inning_label = latest.get("inning", "")
+            # Sort out who is Team 1 based on first inning
+            s1 = scores[0] if isinstance(scores[0], dict) else {}
+            i1_label = s1.get("inning", "")
+            
+            if team2.lower() in i1_label.lower():
+                team1_ordered = team2
+                team2_ordered = team1
+            
+            # Format Team 1 score
+            runs1 = s1.get("r", 0) or 0
+            w1 = s1.get("w", 0) or 0
+            o1 = float(s1.get("o", 0) or 0)
+            team1_score_str = f"{runs1}/{w1} ({o1})"
+            
+            if len(scores) == 1:
+                runs = runs1
+                wickets_val = w1
+                overs = o1
+                inning_label = i1_label
+            elif len(scores) > 1:
+                s2 = scores[1] if isinstance(scores[1], dict) else {}
+                i2_label = s2.get("inning", "")
+                runs2 = s2.get("r", 0) or 0
+                w2 = s2.get("w", 0) or 0
+                o2 = float(s2.get("o", 0) or 0)
+                team2_score_str = f"{runs2}/{w2} ({o2})"
+                
+                latest = scores[-1] if isinstance(scores[-1], dict) else {}
+                runs = latest.get("r", 0) or 0
+                wickets_val = latest.get("w", 0) or 0
+                overs = float(latest.get("o", 0) or 0)
+                inning_label = latest.get("inning", "")
 
         return {
             "team1": team1,
@@ -183,6 +232,10 @@ def extract_score_from_match(match_data):
             "match_id": match_id,
             "status": status,
             "inning_label": inning_label,
+            "team1_ordered": team1_ordered,
+            "team2_ordered": team2_ordered,
+            "team1_score_str": team1_score_str,
+            "team2_score_str": team2_score_str,
         }
 
     except (IndexError, TypeError, KeyError):
