@@ -1399,20 +1399,41 @@ with tab2:
     col1, col2, col3 = st.columns(3, gap="medium")
 
     with col1:
-        role = st.selectbox("Role", ["Batsman", "Bowler"])
+        role = st.selectbox(
+            "Role",
+            ["Batsman", "Bowler"],
+            index=None,
+            placeholder="Select Role",
+            label_visibility="collapsed",
+        )
 
     if role == "Batsman":
         player_list = sorted(batsman_df["batter"].unique())
         venue_list = sorted(batsman_df["venue"].unique())
-    else:
+    elif role == "Bowler":
         player_list = sorted(bowler_df["bowler"].unique())
         venue_list = sorted(bowler_df["venue"].unique())
+    else:
+        player_list = sorted(batsman_df["batter"].unique())
+        venue_list = sorted(batsman_df["venue"].unique())
 
     with col2:
-        player = st.selectbox("Player", player_list)
+        player = st.selectbox(
+            "Player",
+            player_list,
+            index=None,
+            placeholder="Select Player",
+            label_visibility="collapsed",
+        )
 
     with col3:
-        venue = st.selectbox("Venue", venue_list)
+        venue = st.selectbox(
+            "Venue",
+            venue_list,
+            index=None,
+            placeholder="Select Venue",
+            label_visibility="collapsed",
+        )
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
@@ -1457,6 +1478,10 @@ with tab2:
         st.session_state["pred_clicked"] = True
 
     if st.session_state["pred_clicked"]:
+
+        if not role or not player or not venue:
+            st.warning("Please select a Role, Player, and Venue before running the prediction.")
+            st.stop()
 
         if role == "Batsman":
             df = batsman_df[
