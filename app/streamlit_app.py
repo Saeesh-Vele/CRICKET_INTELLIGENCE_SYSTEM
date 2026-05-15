@@ -410,70 +410,218 @@ div[data-baseweb="menu"] div[aria-selected="true"] {
     box-shadow: none !important;
 }
 
-/* ===== OVERVIEW FEATURES ===== */
+/* ===== OVERVIEW FEATURES (PREMIUM) ===== */
+@keyframes ov-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes ov-gradient { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes ov-fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes ov-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.25)} 50%{box-shadow:0 0 0 8px rgba(59,130,246,0)} }
+@keyframes ov-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-top: 32px;
+    gap: 20px;
+    margin-top: 28px;
 }
 .feature-item {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 18px;
+    padding: 28px 24px;
     text-align: left;
     box-shadow: var(--shadow-soft);
+    transition: transform .28s cubic-bezier(.4,0,.2,1), box-shadow .28s ease, border-color .28s ease;
+    animation: ov-fadeUp .5s ease both;
+    position: relative;
+    overflow: hidden;
 }
-.feature-item .feat-icon {
-    display: none; /* Hide icons for minimalism */
+.feature-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+    background-size: 200% 100%;
+    animation: ov-gradient 4s ease infinite;
+    opacity: 0;
+    transition: opacity .28s ease;
 }
+.feature-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,.12);
+    border-color: rgba(59,130,246,.25);
+}
+.feature-item:hover::before { opacity: 1; }
+.feature-item:nth-child(1){animation-delay:.05s} .feature-item:nth-child(2){animation-delay:.1s}
+.feature-item:nth-child(3){animation-delay:.15s} .feature-item:nth-child(4){animation-delay:.2s}
+.feature-item:nth-child(5){animation-delay:.25s} .feature-item:nth-child(6){animation-delay:.3s}
+
+.feat-icon-wrap {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    font-size: 20px;
+    transition: transform .25s ease;
+}
+.feature-item:hover .feat-icon-wrap { transform: scale(1.1); }
+.feat-icon-wrap.blue   { background: rgba(59,130,246,.12); }
+.feat-icon-wrap.purple { background: rgba(139,92,246,.12); }
+.feat-icon-wrap.cyan   { background: rgba(6,182,212,.12); }
+.feat-icon-wrap.green  { background: rgba(16,185,129,.12); }
+.feat-icon-wrap.amber  { background: rgba(245,158,11,.12); }
+.feat-icon-wrap.rose   { background: rgba(244,63,94,.12); }
+
 .feature-item .feat-title {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
 }
 .feature-item .feat-desc {
-    font-size: 14px;
-    color: var(--text-secondary);
-    line-height: 1.5;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
 }
 
-/* ===== HERO BANNER ===== */
+/* ===== HERO BANNER (PREMIUM) ===== */
 .hero-banner {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 20px;
-    padding: 48px 40px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    background-size: 200% 200%;
+    animation: ov-gradient 8s ease infinite;
+    border: 1px solid rgba(59,130,246,.15);
+    border-radius: 22px;
+    padding: 52px 44px;
     text-align: left;
     margin-bottom: 32px;
-    box-shadow: var(--shadow-soft);
+    box-shadow: 0 8px 40px rgba(0,0,0,.18);
+    position: relative;
+    overflow: hidden;
+}
+.hero-banner::after {
+    content: '';
+    position: absolute;
+    top: -50%; right: -20%;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(59,130,246,.08) 0%, transparent 70%);
+    pointer-events: none;
 }
 .hero-banner .hero-icon { display: none; }
 .hero-banner .hero-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-    margin-bottom: 12px;
+    font-size: 34px;
+    font-weight: 700;
+    color: #f1f5f9 !important;
+    letter-spacing: -0.025em;
+    margin-bottom: 14px;
+    line-height: 1.15;
 }
 .hero-banner .hero-sub {
-    font-size: 16px;
-    color: var(--text-secondary);
+    font-size: 15px;
+    color: #94a3b8 !important;
     font-weight: 400;
-    max-width: 600px;
+    max-width: 580px;
     margin: 0;
-    line-height: 1.6;
+    line-height: 1.65;
 }
 .hero-badge {
-    display: inline-block;
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #3b82f6;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    background: rgba(59,130,246,.1);
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(59,130,246,.2);
+}
+.hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #3b82f6;
+    animation: ov-pulse 2s ease infinite;
+}
+
+/* ===== OVERVIEW STATS ROW ===== */
+.ov-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 28px 0 8px 0;
+}
+.ov-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 22px 20px;
+    text-align: left;
+    box-shadow: var(--shadow-soft);
+    transition: transform .25s ease, box-shadow .25s ease;
+    animation: ov-fadeUp .45s ease both;
+}
+.ov-stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.ov-stat-card:nth-child(1){animation-delay:.05s} .ov-stat-card:nth-child(2){animation-delay:.1s}
+.ov-stat-card:nth-child(3){animation-delay:.15s} .ov-stat-card:nth-child(4){animation-delay:.2s}
+.ov-stat-num {
+    font-size: 28px; font-weight: 700; letter-spacing: -1px;
+    color: var(--text-primary); line-height: 1;
+}
+.ov-stat-label {
+    font-size: 12px; font-weight: 500; color: var(--text-muted);
+    margin-top: 6px; text-transform: uppercase; letter-spacing: .4px;
+}
+
+/* ===== PIPELINE SECTION ===== */
+.ov-pipeline {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin: 8px 0 0 0; flex-wrap: wrap;
+}
+.ov-pipe-step {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 18px 22px; min-width: 130px;
+    animation: ov-fadeUp .5s ease both;
+}
+.ov-pipe-step:nth-child(1){animation-delay:.1s} .ov-pipe-step:nth-child(3){animation-delay:.2s}
+.ov-pipe-step:nth-child(5){animation-delay:.3s} .ov-pipe-step:nth-child(7){animation-delay:.4s}
+.ov-pipe-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 10px;
+    background: rgba(59,130,246,.1);
+    transition: transform .25s ease;
+}
+.ov-pipe-step:hover .ov-pipe-icon { transform: scale(1.12); }
+.ov-pipe-label { font-size: 12px; font-weight: 600; color: var(--text-primary); text-align: center; }
+.ov-pipe-sub { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+.ov-pipe-arrow {
+    font-size: 18px; color: var(--text-muted); margin: 0 2px;
+    animation: ov-shimmer 2s linear infinite;
+    background: linear-gradient(90deg, var(--text-muted) 40%, rgba(59,130,246,.5) 50%, var(--text-muted) 60%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* ===== TECH BADGES ===== */
+.ov-tech-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 16px; justify-content: center;
+}
+.ov-tech-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    transition: all .2s ease;
+}
+.ov-tech-badge:hover {
+    border-color: rgba(59,130,246,.3);
+    background: rgba(59,130,246,.05);
+    transform: translateY(-1px);
 }
 
 /* ===== PLOTLY CHARTS WRAPPER ===== */
@@ -1048,66 +1196,137 @@ tab1, tab2, tab3 = st.tabs([
 with tab1:
     st.markdown("")  # spacer
 
+    # ── Intro card ──
     st.markdown("""
-    <div class="glass-card" style="margin-bottom: 24px;">
-        <div class="section-header">
-            <div class="section-icon">🏏</div>
-            <div>
-                <div class="section-title">Intelligent Cricket Performance Forecasting</div>
-                <div class="section-subtitle">Powered by ensemble ML models with real-time match context</div>
-            </div>
+    <div class="glass-card" style="margin-bottom: 0; background: var(--bg-card); border: 1px solid var(--border-subtle);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <span style="display:inline-flex;align-items:center;gap:6px;color:#3b82f6;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;background:rgba(59,130,246,.08);padding:5px 14px;border-radius:20px;border:1px solid rgba(59,130,246,.15);">
+                <span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>
+                AI-Powered System
+            </span>
         </div>
-        <div style="margin-top: 16px; color: #94a3b8; font-size: 14px; line-height: 1.8;">
-            This system uses advanced machine learning pipelines to deliver accurate, explainable
-            performance predictions for both batsmen and bowlers — factoring in historical trends,
-            venue-specific data, rolling averages, and live match context.
+        <div style="font-size:26px;font-weight:700;color:var(--text-primary) !important;letter-spacing:-0.025em;margin-bottom:10px;line-height:1.2;">
+            Intelligent Cricket Performance Forecasting
+        </div>
+        <div style="font-size:14px;color:var(--text-muted) !important;font-weight:400;max-width:620px;line-height:1.7;">
+            Powered by ensemble ML models with real-time match context — delivering accurate, explainable
+            performance predictions for both batsmen and bowlers using historical trends, venue-specific data,
+            rolling averages, and live match context.
         </div>
     </div>
-    <script>
-
-    </script>
     """, unsafe_allow_html=True)
 
-    # ==============================
-    #  FEATURE GRID (static content only — no live score)
-    # ==============================
+    # ── Stats row ──
     st.markdown("""
-
-    <div class="feature-grid">
-        <div class="feature-item">
-            <div class="feat-icon">📊</div>
-            <div class="feat-title">Runs Prediction</div>
-            <div class="feat-desc">XGBoost / Random Forest ensemble for batsman scoring</div>
+    <div class="ov-stats-row">
+        <div class="ov-stat-card">
+            <div class="ov-stat-num">2</div>
+            <div class="ov-stat-label">ML Models</div>
         </div>
-        <div class="feature-item">
-            <div class="feat-icon">🎯</div>
-            <div class="feat-title">Wickets Prediction</div>
-            <div class="feat-desc">Random Forest model for bowler wicket-taking</div>
+        <div class="ov-stat-card">
+            <div class="ov-stat-num">30+</div>
+            <div class="ov-stat-label">Features</div>
         </div>
-        <div class="feature-item">
-            <div class="feat-icon">🤖</div>
-            <div class="feat-title">Feature Engineering</div>
-            <div class="feat-desc">Rolling stats, venue averages, player matchups</div>
+        <div class="ov-stat-card">
+            <div class="ov-stat-num">95%</div>
+            <div class="ov-stat-label">Confidence Interval</div>
         </div>
-        <div class="feature-item">
-            <div class="feat-icon">📑</div>
-            <div class="feat-title">SHAP Explainability</div>
-            <div class="feat-desc">Local & global feature impact analysis</div>
-        </div>
-        <div class="feature-item">
-            <div class="feat-icon">📊</div>
-            <div class="feat-title">Uncertainty Modeling</div>
-            <div class="feat-desc">95% confidence intervals with probability density</div>
-        </div>
-        <div class="feature-item">
-            <div class="feat-icon">📄</div>
-            <div class="feat-title">PDF Reports</div>
-            <div class="feat-desc">One-click downloadable prediction reports</div>
+        <div class="ov-stat-card">
+            <div class="ov-stat-num">Live</div>
+            <div class="ov-stat-label">API Integration</div>
         </div>
     </div>
-    <script>
+    """, unsafe_allow_html=True)
 
-    </script>
+    # ── Feature grid ──
+    st.markdown("""
+    <div style="margin-top:32px;margin-bottom:8px;">
+        <div style="font-size:18px;font-weight:600;color:var(--text-primary);letter-spacing:-0.01em;">Core Capabilities</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Everything you need for cricket performance intelligence</div>
+    </div>
+    <div class="feature-grid">
+        <div class="feature-item">
+            <div class="feat-icon-wrap blue">📊</div>
+            <div class="feat-title">Runs Prediction</div>
+            <div class="feat-desc">XGBoost &amp; Random Forest ensemble model for accurate batsman run scoring forecasts</div>
+        </div>
+        <div class="feature-item">
+            <div class="feat-icon-wrap purple">🎯</div>
+            <div class="feat-title">Wickets Prediction</div>
+            <div class="feat-desc">Random Forest classifier for bowler wicket-taking probability estimation</div>
+        </div>
+        <div class="feature-item">
+            <div class="feat-icon-wrap cyan">⚙️</div>
+            <div class="feat-title">Feature Engineering</div>
+            <div class="feat-desc">Rolling stats, venue averages, player matchups, and form indicators</div>
+        </div>
+        <div class="feature-item">
+            <div class="feat-icon-wrap green">🔍</div>
+            <div class="feat-title">SHAP Explainability</div>
+            <div class="feat-desc">Local &amp; global feature impact analysis with interactive visualizations</div>
+        </div>
+        <div class="feature-item">
+            <div class="feat-icon-wrap amber">📈</div>
+            <div class="feat-title">Uncertainty Modeling</div>
+            <div class="feat-desc">95% confidence intervals with Gaussian probability density curves</div>
+        </div>
+        <div class="feature-item">
+            <div class="feat-icon-wrap rose">📄</div>
+            <div class="feat-title">PDF Reports</div>
+            <div class="feat-desc">One-click downloadable prediction reports with full analysis breakdown</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── ML Pipeline visualization ──
+    st.markdown("""
+    <div style="margin-top:40px;margin-bottom:8px;">
+        <div style="font-size:18px;font-weight:600;color:var(--text-primary);letter-spacing:-0.01em;">How It Works</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">End-to-end machine learning pipeline</div>
+    </div>
+    <div class="glass-card" style="padding:28px 20px;">
+        <div class="ov-pipeline">
+            <div class="ov-pipe-step">
+                <div class="ov-pipe-icon" style="background:rgba(59,130,246,.1);">📥</div>
+                <div class="ov-pipe-label">Data Ingestion</div>
+                <div class="ov-pipe-sub">CSV &amp; Live API</div>
+            </div>
+            <div class="ov-pipe-arrow">→</div>
+            <div class="ov-pipe-step">
+                <div class="ov-pipe-icon" style="background:rgba(139,92,246,.1);">⚙️</div>
+                <div class="ov-pipe-label">Feature Pipeline</div>
+                <div class="ov-pipe-sub">30+ engineered</div>
+            </div>
+            <div class="ov-pipe-arrow">→</div>
+            <div class="ov-pipe-step">
+                <div class="ov-pipe-icon" style="background:rgba(16,185,129,.1);">🧠</div>
+                <div class="ov-pipe-label">ML Prediction</div>
+                <div class="ov-pipe-sub">RF / XGBoost</div>
+            </div>
+            <div class="ov-pipe-arrow">→</div>
+            <div class="ov-pipe-step">
+                <div class="ov-pipe-icon" style="background:rgba(244,63,94,.1);">📊</div>
+                <div class="ov-pipe-label">Explainability</div>
+                <div class="ov-pipe-sub">SHAP values</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Tech stack badges ──
+    st.markdown("""
+    <div style="margin-top:32px;text-align:center;">
+        <div style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">Built With</div>
+        <div class="ov-tech-row">
+            <div class="ov-tech-badge">🐍 Python</div>
+            <div class="ov-tech-badge">🎯 Scikit-learn</div>
+            <div class="ov-tech-badge">🚀 XGBoost</div>
+            <div class="ov-tech-badge">📊 Plotly</div>
+            <div class="ov-tech-badge">🔍 SHAP</div>
+            <div class="ov-tech-badge">🌐 Streamlit</div>
+            <div class="ov-tech-badge">📡 Cricket API</div>
+        </div>
+    </div>
     """, unsafe_allow_html=True)
 
 
